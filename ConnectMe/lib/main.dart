@@ -33,7 +33,10 @@ class _MyAppState extends State<MyApp> {
         accentColor: Colors.green[800],
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: HomePage(toggleTheme: toggleTheme, theme: theme),
+      home: HomePage(
+          toggleTheme: toggleTheme,
+          theme: theme
+      ),
     );
   }
 }
