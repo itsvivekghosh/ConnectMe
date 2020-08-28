@@ -13,6 +13,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   String theme = 'dark';
+  Color lightThemeColor = Colors.green;
 
   toggleTheme() {
     setState(() {
@@ -28,14 +29,16 @@ class _MyAppState extends State<MyApp> {
       title: 'Connect Me',
       theme: theme == 'dark' ? ThemeData.dark()
           : ThemeData(
-        primaryColor: Colors.green[800],
+        cursorColor: lightThemeColor,
+        primaryColor: lightThemeColor,
         scaffoldBackgroundColor: Colors.white,
-        accentColor: Colors.green[800],
+        accentColor: lightThemeColor,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: HomePage(
           toggleTheme: toggleTheme,
-          theme: theme
+          theme: theme,
+          lightThemeColor: lightThemeColor
       ),
     );
   }
