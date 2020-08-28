@@ -74,7 +74,7 @@ class _SignUpState extends State<SignUp> {
   @override
   void initState() {
     _passwordVisible = false;
-    Future.delayed(Duration(seconds: 1, milliseconds: 100), () {
+    Future.delayed(Duration(milliseconds: 900), () {
       setState(() {
         _loading = false;
       });
@@ -145,7 +145,11 @@ class _SignUpState extends State<SignUp> {
                                 : null;
                           },
                           decoration: InputDecoration(
-                            labelText: "Enter Username",
+                            labelText: "Username",
+                            hintText: "Enter Username",
+                            hintStyle: TextStyle(
+                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                            ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(20.0),
                               borderSide: new BorderSide(
@@ -175,7 +179,11 @@ class _SignUpState extends State<SignUp> {
                                 : "Enter Valid Email Address";
                           },
                           decoration: InputDecoration(
-                            labelText: "Enter Your Email",
+                            labelText: "Email Address",
+                            hintText: "Enter your Email Address",
+                            hintStyle: TextStyle(
+                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                            ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(20.0),
                               borderSide: new BorderSide(
@@ -201,7 +209,11 @@ class _SignUpState extends State<SignUp> {
                           ),
                           controller: phoneNumberEditingController,
                           decoration: InputDecoration(
-                            labelText: 'Enter Phone Number',
+                            labelText: 'Phone Number',
+                            hintText: "Enter your Number",
+                            hintStyle: TextStyle(
+                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                            ),
                             focusColor: widget.lightThemeColor,
                             border: OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(20.0),
@@ -232,7 +244,11 @@ class _SignUpState extends State<SignUp> {
                                 : null;
                           },
                           decoration: InputDecoration(
-                            labelText: "Enter Your Password",
+                            labelText: "Password",
+                            hintText: "Enter your Password",
+                            hintStyle: TextStyle(
+                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                            ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(20.0),
                               borderSide: new BorderSide(
@@ -306,8 +322,7 @@ class _SignUpState extends State<SignUp> {
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: LinearGradient(colors: [
-                                    Colors.blue,
-                                    Colors.blue
+                                    Colors.blue, Colors.blue
                                   ])
                               ),
                               child: Container(

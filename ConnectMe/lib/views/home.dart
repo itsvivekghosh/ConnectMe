@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
       child: SelectionScreen(
           theme: widget.theme,
           toggleTheme: widget.toggleTheme,
-            lightThemeColor: widget.lightThemeColor
+          lightThemeColor: widget.lightThemeColor
         ),
       ),
     );

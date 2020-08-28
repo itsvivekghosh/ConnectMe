@@ -1,3 +1,5 @@
+import 'package:ConnectMe/helper/helperFunctions.dart';
+import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:flutter/material.dart';
 
@@ -11,7 +13,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
+  bool userIsLoggedIn;
   String theme = 'dark';
   Color lightThemeColor = Colors.green;
 
@@ -20,6 +22,20 @@ class _MyAppState extends State<MyApp> {
       if (theme == 'light')
         theme = 'dark';
       else theme = 'light';
+    });
+  }
+
+  @override
+  void initState() {
+    getLoggedInState();
+    super.initState();
+  }
+
+  getLoggedInState() async {
+    await HelperFunctions().getUserLoggedInSharedPreference().then((value){
+      setState(() {
+        userIsLoggedIn  = value;
+      });
     });
   }
 
@@ -35,10 +51,24 @@ class _MyAppState extends State<MyApp> {
         accentColor: lightThemeColor,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: HomePage(
-          toggleTheme: toggleTheme,
-          theme: theme,
-          lightThemeColor: lightThemeColor
+      home: userIsLoggedIn != null ?
+            // true and null part
+              userIsLoggedIn ? ChatRoom(
+                  toggleTheme: toggleTheme,
+                  theme: theme,
+                  lightThemeColor: lightThemeColor
+              ) : HomePage(
+                  toggleTheme: toggleTheme,
+                  theme: theme,
+                  lightThemeColor: lightThemeColor
+              )
+      // false and non null part
+          : Container(
+        child: ChatRoom(
+            toggleTheme: toggleTheme,
+            theme: theme,
+            lightThemeColor: lightThemeColor
+        ),
       ),
     );
   }

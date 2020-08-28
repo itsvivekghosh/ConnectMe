@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HelperFunctions {
@@ -6,7 +7,7 @@ class HelperFunctions {
   static String sharedPreferenceUserNameKey = "USERNAMEKEY";
   static String sharedPreferenceUserEmailKey = "USEREMAILKEY";
 
-  /// saving data to sharedpreference
+  /// saving data to shared-preference
   static Future<bool> saveUserLoggedInSharedPreference(bool isUserLoggedIn) async{
 
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -24,17 +25,27 @@ class HelperFunctions {
   }
 
   /// fetching data from shared-preference
-  static Future<bool> getUserLoggedInSharedPreference() async{
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    return await preferences.getBool(sharedPreferenceUserLoggedInKey);
+  Future<FirebaseUser> getLoggedFirebaseUser() {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    return _auth.currentUser();
   }
 
-  static Future<String> getUserNameSharedPreference() async{
+  Future<bool> getUserLoggedInSharedPreference() async {
+    FirebaseUser firebaseUser = await getLoggedFirebaseUser();
+    if (firebaseUser != null) {
+      IdTokenResult tokenResult = await firebaseUser.getIdToken(refresh: true);
+      return tokenResult.token != null;
+    } else {
+      return false;
+    }
+  }
+
+  static Future<String> getUserNameSharedPreference() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     return await preferences.getString(sharedPreferenceUserNameKey);
   }
 
-  static Future<String> getUserEmailSharedPreference() async{
+  static Future<String> getUserEmailSharedPreference() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     return await preferences.getString(sharedPreferenceUserEmailKey);
   }

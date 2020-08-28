@@ -45,7 +45,6 @@ class _SelectionScreenState extends State<SelectionScreen> {
       onWillPop: _onBackPressed,
       child: Container(
         child: Container(
-          height: MediaQuery.of(context).size.height,
           alignment: Alignment.bottomCenter,
           child:
             Column(
@@ -139,14 +138,26 @@ class _SelectionScreenState extends State<SelectionScreen> {
                   ),
               ),
                 SizedBox(height: 50),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text(
-                    "Made with Love in India",
-                    style: TextStyle(
-                        fontWeight: widget.theme == 'dark' ? FontWeight.w100 : FontWeight.w300
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        "Made with Love in India",
+                        style: TextStyle(
+                            fontWeight: widget.theme == 'dark' ? FontWeight.w100 : FontWeight.w300
+                        ),
+                      ),
                     ),
-                  ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.asset(
+                          "assets/india.png",
+                        height: 35, width: 35,
+                      ),
+                    ),
+                  ],
                 ),
               ],
           ),

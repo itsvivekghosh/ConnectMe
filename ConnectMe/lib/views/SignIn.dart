@@ -2,8 +2,10 @@ import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/services/database.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
+import 'package:ConnectMe/views/forgotPassword.dart';
 import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -24,6 +26,8 @@ class _SignInState extends State<SignIn> {
   bool _loading = true;
   bool isLoading = false;
   bool _passwordVisible = false;
+  String wrongEmailMessage = '';
+  String wrongPasswordMessage = '';
 
   TextEditingController emailTextEditingController = new TextEditingController();
   TextEditingController passwordTextEditingController = new TextEditingController();
@@ -48,7 +52,6 @@ class _SignInState extends State<SignIn> {
   signMeIn() {
     if (formKey.currentState.validate()) {
       HelperFunctions.saveUserEmailSharedPreference(emailTextEditingController.text);
-
       databaseMethods.getUsersByUserEmail(emailTextEditingController.text)
           .then((val) {
         queryUserSnapshot = val;
@@ -83,6 +86,31 @@ class _SignInState extends State<SignIn> {
         }
       });
     }
+  }
+
+  void callForgotPassword() {
+    String value;
+    if (RegExp(
+        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(emailTextEditingController.text)) value = emailTextEditingController.text;
+
+    print("Setting your password: $value");
+    Navigator.push(context, MaterialPageRoute(
+        builder: (context) {
+            return ForgotPassword(
+              theme: widget.theme,
+              lightThemeColor: widget.lightThemeColor,
+              toggleTheme: widget.toggleTheme,
+              emailValue: value
+            );
+        }
+      ),
+    );
+  }
+
+  void validateAndSignMeIn() {
+    print("Signing In");
+    signMeIn();
   }
 
   @override
@@ -149,16 +177,13 @@ class _SignInState extends State<SignIn> {
                               r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
                               .hasMatch(value)
                               ? null
-                              : "Enter provide valid email";
+                              : 'Enter Valid Email Address';
                         },
                         decoration: InputDecoration(
                             labelText: "Enter Your Email",
                             hintText: "Enter your Registered Email ID",
                             hintStyle: TextStyle(
-                              color: Colors.white24
-                            ),
-                            labelStyle: TextStyle(
-
+                              color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(20.0),
@@ -192,7 +217,7 @@ class _SignInState extends State<SignIn> {
                             labelText: "Enter Password",
                             hintText: "Enter your Password",
                             hintStyle: TextStyle(
-                                color: Colors.white24
+                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             labelStyle: TextStyle(
                               decorationColor: widget.lightThemeColor,
@@ -229,16 +254,16 @@ class _SignInState extends State<SignIn> {
                       ),
                       SizedBox(height: 5,),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           GestureDetector(
                             onTap: () {
-                              print("This is Forgot Password! block");
+                              callForgotPassword();
                             },
                             child: Container(
                               padding: EdgeInsets.symmetric(vertical: 10),
                               child: Text(
-                                "Forgot Password!",
+                                "Forgot Password?",
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -250,10 +275,11 @@ class _SignInState extends State<SignIn> {
                       SizedBox(height: 5),
                       GestureDetector(
                         onTap: () {
-                          signMeIn();
+                          validateAndSignMeIn();
                         },
-                          child: customButtonDark(context, "Sign In", 18, widget.lightThemeColor
-                          ),
+                        child: customButtonDark(
+                            context, "Sign In", 18, widget.lightThemeColor
+                        ),
                       ),
                       SizedBox(height: 10,),
                       widget.theme == 'dark' ? customButtonDark(context, "Sign In with Google", 18, Colors.white) :
