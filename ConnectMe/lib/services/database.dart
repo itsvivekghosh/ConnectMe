@@ -28,4 +28,14 @@ class DatabaseMethods {
       print(e.toString());
     });
   }
+
+  getUserInfo(String email) async {
+    return Firestore.instance
+        .collection("users")
+        .where("email", isEqualTo: email)
+        .getDocuments()
+        .catchError((e) {
+      print("Error: ${e.toString()}");
+    });
+  }
 }

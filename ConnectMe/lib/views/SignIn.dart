@@ -25,7 +25,10 @@ class _SignInState extends State<SignIn> {
 
   bool _loading = true;
   bool isLoading = false;
+  bool isEmailWrong = false;
+  bool isPasswordWrong = false;
   bool _passwordVisible = false;
+  String currentLoginUser;
   String wrongEmailMessage = '';
   String wrongPasswordMessage = '';
 
@@ -40,16 +43,21 @@ class _SignInState extends State<SignIn> {
   @override
   void initState() {
     _passwordVisible = false;
+    isPasswordWrong = false;
+    isEmailWrong = false;
+
     Future.delayed(
-        Duration(seconds: 1, milliseconds: 100), () =>
-          setState(() {
-            _loading = false;
-          })
-        );
+      Duration(seconds: 1, milliseconds: 100), () =>
+      setState(() {
+        _loading = false;
+      })
+    );
     super.initState();
   }
 
-  signMeIn() {
+  signMeIn() async {
+
+    final FirebaseAuth _auth = FirebaseAuth.instance;
     if (formKey.currentState.validate()) {
       HelperFunctions.saveUserEmailSharedPreference(emailTextEditingController.text);
       databaseMethods.getUsersByUserEmail(emailTextEditingController.text)
@@ -65,8 +73,12 @@ class _SignInState extends State<SignIn> {
 
       authService.signInWithEmailAndPassword(
           emailTextEditingController.text,
-          passwordTextEditingController.text).then((val) {
+          passwordTextEditingController.text).then((val) async {
         if (val != null) {
+          final FirebaseUser user = await _auth.currentUser().then((FirebaseUser user) {
+            currentLoginUser = user.uid;
+            return null;
+          });
           Navigator.pop(context);
           HelperFunctions.saveUserLoggedInSharedPreference(true);
           Navigator.pushReplacement(
@@ -76,13 +88,13 @@ class _SignInState extends State<SignIn> {
                 theme: widget.theme,
                 toggleTheme: widget.toggleTheme,
                 lightThemeColor: widget.lightThemeColor,
+                currentLoginUser: currentLoginUser,
               ),
             ),
           );
-          print('Signed In as ${emailTextEditingController.text}');
         }
         else {
-          print("Error signing in");
+          print("Error Signing in");
         }
       });
     }
@@ -108,9 +120,60 @@ class _SignInState extends State<SignIn> {
     );
   }
 
-  void validateAndSignMeIn() {
-    print("Signing In");
-    signMeIn();
+  String emailErrorText = '';
+  String passwordErrorText = '';
+
+  void validateAndSignMeIn() async {
+    print("Signing In...");
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+
+    try {
+      setState(() {
+        isEmailWrong = false;
+        isPasswordWrong = false;
+      });
+      final checkUser = await _auth.signInWithEmailAndPassword(
+          email: emailTextEditingController.text, password: passwordTextEditingController.text);
+
+      if (checkUser != null) {
+        await signMeIn();
+      }
+    } catch(e) {
+      print("Error while Signing In is: ${e.toString()}");
+      if (e.code == 'ERROR_WRONG_PASSWORD') {
+        setState(() {
+          isPasswordWrong = true;
+          passwordErrorText = 'Please check your password';
+        });
+      }
+      else if (e.code == 'ERROR_INVALID_EMAIL') {
+        setState(() {
+          isEmailWrong = true;
+          emailErrorText = 'Enter Valid email address';
+        });
+      }
+      else
+        setState(() {
+          isPasswordWrong = true;
+          isEmailWrong = true;
+          if (emailTextEditingController.text.isEmpty) {
+            emailErrorText = "Email cannot be empty";
+          }
+          if(passwordTextEditingController.text.isEmpty) {
+            passwordErrorText = "Password cannot be empty";
+          }
+          bool val = RegExp(
+              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+              .hasMatch(emailTextEditingController.text);
+          if(emailTextEditingController.text.isNotEmpty) {
+            emailErrorText = val ? "Enter valid email address" : "User doesn't exist";
+          }
+          if (passwordTextEditingController.text.isNotEmpty) {
+            passwordErrorText = 'Please check your password';
+          }
+        }
+      );
+    }
   }
 
   @override
@@ -138,8 +201,10 @@ class _SignInState extends State<SignIn> {
           )
         ],
       ),
-      body: _loading || isLoading ? SpinKitDoubleBounce(
-        color: widget.theme == 'dark' ? Colors.white : Colors.green,
+      body: _loading || isLoading ? Container(
+        child: SpinKitDoubleBounce(
+          color: widget.theme == 'dark' ? Colors.white : Colors.green,
+        ),
       )
       : SingleChildScrollView(
         child: Container(
@@ -172,13 +237,6 @@ class _SignInState extends State<SignIn> {
                         ),
                         keyboardType: TextInputType.emailAddress,
                         controller: emailTextEditingController,
-                        validator: (value) {
-                          return RegExp(
-                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-                              .hasMatch(value)
-                              ? null
-                              : 'Enter Valid Email Address';
-                        },
                         decoration: InputDecoration(
                             labelText: "Enter Your Email",
                             hintText: "Enter your Registered Email ID",
@@ -186,14 +244,15 @@ class _SignInState extends State<SignIn> {
                               color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(20.0),
+                            borderRadius: new BorderRadius.circular(32.0),
                             borderSide: new BorderSide(
                               color: Colors.grey,
                               width: 1,
                             ),
                           ),
+                          errorText: isEmailWrong ? emailErrorText : null,
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(20.0),
+                            borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
                               color: widget.lightThemeColor,
                               style: BorderStyle.solid,
@@ -223,12 +282,13 @@ class _SignInState extends State<SignIn> {
                               decorationColor: widget.lightThemeColor,
                             ),
                             border: new OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(20.0),
+                            borderRadius: new BorderRadius.circular(32.0),
                             borderSide: new BorderSide(
                               color: Colors.grey,
                               width: 5
                             ),
                           ),
+                          errorText: isPasswordWrong ? passwordErrorText : null,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _passwordVisible
@@ -243,7 +303,7 @@ class _SignInState extends State<SignIn> {
                             },
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(20.0),
+                            borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
                               color: widget.lightThemeColor,
                               style: BorderStyle.solid,
@@ -312,3 +372,32 @@ class _SignInState extends State<SignIn> {
     );
   }
 }
+
+/*
+try {
+                    setState(() {
+                      wrongEmail = false;
+                      wrongPassword = false;
+                    });
+                    final newUser = await _auth.signInWithEmailAndPassword(
+                        email: email, password: password);
+                    if (newUser != null) {
+                      Navigator.pushNamed(context, Done.id);
+                    }
+                  } catch (e) {
+                    print(e.code);
+                    if (e.code == 'ERROR_WRONG_PASSWORD') {
+                      setState(() {
+                        wrongPassword = true;
+                      });
+                    } else {
+                      setState(() {
+                        emailText = 'User doesn\'t exist';
+                        passwordText = 'Please check your email';
+
+                        wrongPassword = true;
+                        wrongEmail = true;
+                      });
+                    }
+                  }
+ */

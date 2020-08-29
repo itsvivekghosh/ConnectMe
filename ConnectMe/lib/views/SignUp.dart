@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ConnectMe/helper/helperFunctions.dart';
@@ -24,6 +26,7 @@ class _SignUpState extends State<SignUp> {
   bool _passwordVisible = false;
   bool _loading = true;
   bool isLoadingNext = false;
+  String currentLoginUser;
   final formKey = GlobalKey<FormState>();
   TextEditingController emailEditingController = new TextEditingController();
   TextEditingController userNameEditingController = new TextEditingController();
@@ -32,30 +35,40 @@ class _SignUpState extends State<SignUp> {
 
   AuthService authService = new AuthService();
   DatabaseMethods databaseMethods = new DatabaseMethods();
+  bool isErrorInSignUp = false;
+  String errorSignUpMessage = '';
 
   signUp() async {
     if (formKey.currentState.validate()) {
 
       setState(() {
         isLoadingNext = true;
+        errorSignUpMessage = '';
       });
 
       Map<String, String> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
+        'phoneNumber': phoneNumberEditingController.text.toString(),
       };
 
       HelperFunctions.saveUserEmailSharedPreference(emailEditingController.text);
       HelperFunctions.saveUserNameSharedPreference(userNameEditingController.text);
+      final FirebaseAuth _auth = FirebaseAuth.instance;
 
       await authService
           .signUpWithEmailAndPassword(
-          emailEditingController.text, passwordEditingController.text)
-          .then(
-            (value) {
-          Navigator.pop(context);
+            emailEditingController.text, passwordEditingController.text)
+            .then(
+              (value) async {
           databaseMethods.uploadUserInfo(userMap);
           HelperFunctions.saveUserLoggedInSharedPreference(true);
+          final FirebaseUser user = await _auth.currentUser().then((FirebaseUser user) {
+            currentLoginUser = user.uid;
+            return null;
+          });
+
+          Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -63,11 +76,45 @@ class _SignUpState extends State<SignUp> {
                 theme: widget.theme,
                 toggleTheme: widget.toggleTheme,
                 lightThemeColor: widget.lightThemeColor,
+                currentLoginUser: currentLoginUser,
               ),
             ),
           );
         },
       );
+    }
+  }
+
+  void checkAndSignMeIn() async {
+    print("Validating...");
+    setState(() {
+      isErrorInSignUp = false;
+      errorSignUpMessage = '';
+    });
+    if (RegExp(
+        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(emailEditingController.text) == false) {
+      print('pattern not matched!');
+      setState(() {
+        isErrorInSignUp = true;
+        errorSignUpMessage = 'Enter Valid Email Address';
+      });
+      return null;
+    }
+    try {
+      final FirebaseAuth _auth = FirebaseAuth.instance;
+      final checkUser = await _auth.
+                createUserWithEmailAndPassword(
+                email: emailEditingController.text, password: passwordEditingController.text);
+
+      if (checkUser != null) {
+        await signUp();
+      }
+    } catch(e) {
+      setState(() {
+        isErrorInSignUp = true;
+        errorSignUpMessage = 'This Email is already in use, try again with another email!';
+      });
     }
   }
 
@@ -109,12 +156,10 @@ class _SignUpState extends State<SignUp> {
       ),
       body: _loading || isLoadingNext ?
         Center(
-        child:
-        SpinKitDoubleBounce(
-          color: widget.theme == 'dark' ?  Colors.white : Colors.green,
-          size: 75,
-        ),
-      ) :
+          child: SpinKitDoubleBounce(
+            color: widget.theme == 'dark' ? Colors.white : Colors.green,
+          ),
+        ) :
         SingleChildScrollView(
           child:Container(
             height: MediaQuery.of(context).size.height - 80,
@@ -151,14 +196,14 @@ class _SignUpState extends State<SignUp> {
                                 color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: new BorderSide(
                                 color: Colors.grey,
                                 width: 1,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: BorderSide(
                                 color: widget.lightThemeColor,
                                 style: BorderStyle.solid,
@@ -171,13 +216,6 @@ class _SignUpState extends State<SignUp> {
                         TextFormField(
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
                           controller: emailEditingController,
-                          validator: (value) {
-                            return RegExp(
-                                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-                                .hasMatch(value)
-                                ? null
-                                : "Enter Valid Email Address";
-                          },
                           decoration: InputDecoration(
                             labelText: "Email Address",
                             hintText: "Enter your Email Address",
@@ -185,14 +223,15 @@ class _SignUpState extends State<SignUp> {
                                 color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: new BorderSide(
                                 color: Colors.grey,
                                 width: 1,
                               ),
                             ),
+                            errorText: isErrorInSignUp ? errorSignUpMessage : null,
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: BorderSide(
                                 color: widget.lightThemeColor,
                                 style: BorderStyle.solid,
@@ -216,14 +255,14 @@ class _SignUpState extends State<SignUp> {
                             ),
                             focusColor: widget.lightThemeColor,
                             border: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: new BorderSide(
                                 color: Colors.grey,
                                 width: 1,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: BorderSide(
                                 color: widget.lightThemeColor,
                                 style: BorderStyle.solid,
@@ -250,7 +289,7 @@ class _SignUpState extends State<SignUp> {
                                 color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: new BorderSide(
                                   color: Colors.grey,
                                   width: 5
@@ -270,7 +309,7 @@ class _SignUpState extends State<SignUp> {
                               },
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(20.0),
+                              borderRadius: new BorderRadius.circular(32.0),
                               borderSide: BorderSide(
                                 color: widget.lightThemeColor,
                                 style: BorderStyle.solid,
@@ -279,10 +318,10 @@ class _SignUpState extends State<SignUp> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 10,),
+                        SizedBox(height: 18,),
                         GestureDetector(
                           onTap: () {
-                            signUp();
+                            checkAndSignMeIn();
                           },
                           child: customButtonDark(
                               context, "Sign Up", 18, widget.lightThemeColor

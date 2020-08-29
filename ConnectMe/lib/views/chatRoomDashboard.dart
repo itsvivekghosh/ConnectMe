@@ -6,8 +6,9 @@ class ChatRoom extends StatefulWidget {
   final String theme;
   final Function toggleTheme;
   final Color lightThemeColor;
+  final String currentLoginUser;
 
-  ChatRoom({this.theme, this.toggleTheme, this.lightThemeColor});
+  ChatRoom({this.theme, this.toggleTheme, this.lightThemeColor, this.currentLoginUser});
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -105,7 +106,7 @@ class _ChatRoomState extends State<ChatRoom> {
           ),
         ],
       ),
-      body: Text('Chat Room'),
+      body: Text('Welcome ${widget.currentLoginUser}'),
       floatingActionButton: FloatingActionButton(
         child: Icon(
           Icons.search,
