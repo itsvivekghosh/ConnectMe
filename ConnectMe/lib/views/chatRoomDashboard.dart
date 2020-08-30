@@ -1,3 +1,5 @@
+import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:flutter/material.dart';
@@ -71,6 +73,7 @@ class _ChatRoomState extends State<ChatRoom> {
   }
 
   Choice _selectedChoice = null;
+  String titleName;
 
   _select(Choice choice) {
     setState(() {
@@ -79,10 +82,23 @@ class _ChatRoomState extends State<ChatRoom> {
   }
 
   @override
+  void initState() {
+    getUserInfo();
+    super.initState();
+  }
+
+  getUserInfo() async {
+    Constants.myName = await HelperFunctions.getUserNameSharedPreference();
+    setState(() {
+      titleName = Constants.myName;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("ConnectMe"),
+        title: Text("$titleName"),
         actions: <Widget>[
           PopupMenuButton<Choice>(
             onSelected: _select,

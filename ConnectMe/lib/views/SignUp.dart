@@ -1,5 +1,3 @@
-import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +6,6 @@ import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/services/database.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:ConnectMe/widgets/widgets.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 class SignUp extends StatefulWidget {
@@ -24,8 +21,7 @@ class SignUp extends StatefulWidget {
 class _SignUpState extends State<SignUp> {
 
   bool _passwordVisible = false;
-  bool _loading = true;
-  bool isLoadingNext = false;
+  bool isLoading = false;
   String currentLoginUser;
   final formKey = GlobalKey<FormState>();
   TextEditingController emailEditingController = new TextEditingController();
@@ -40,9 +36,8 @@ class _SignUpState extends State<SignUp> {
 
   signUp() async {
     if (formKey.currentState.validate()) {
-
       setState(() {
-        isLoadingNext = true;
+        isLoading = true;
         errorSignUpMessage = '';
       });
 
@@ -68,7 +63,6 @@ class _SignUpState extends State<SignUp> {
             return null;
           });
 
-          Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -121,17 +115,13 @@ class _SignUpState extends State<SignUp> {
   @override
   void initState() {
     _passwordVisible = false;
-    Future.delayed(Duration(milliseconds: 900), () {
-      setState(() {
-        _loading = false;
-      });
-    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomPadding: false,
       appBar: AppBar(
         centerTitle: true,
         title: Text(
@@ -154,15 +144,15 @@ class _SignUpState extends State<SignUp> {
           )
         ],
       ),
-      body: _loading || isLoadingNext ?
-        Center(
-          child: SpinKitDoubleBounce(
-            color: widget.theme == 'dark' ? Colors.white : Colors.green,
+      body: isLoading ? Container(
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: new AlwaysStoppedAnimation<Color>(
+                  widget.theme == 'dark' ? Colors.white : Colors.green
+              )
+            ),
           ),
-        ) :
-        SingleChildScrollView(
-          child:Container(
-            height: MediaQuery.of(context).size.height - 80,
+        ) :  Container(
             alignment: Alignment.center,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 32),
@@ -400,7 +390,6 @@ class _SignUpState extends State<SignUp> {
             ),
           ),
         ),
-      ),
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:ConnectMe/services/auth.dart';
+import 'package:ConnectMe/views/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -6,8 +8,7 @@ class ForgotPassword extends StatefulWidget {
   final Function toggleState, toggleTheme;
   final bool signUpState;
   final Color lightThemeColor;
-  final String emailValue;
-  ForgotPassword({this.emailValue, this.theme, this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
+  ForgotPassword({this.theme, this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
 
   @override
   _ForgotPasswordState createState() => _ForgotPasswordState();
@@ -15,18 +16,92 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
 
+  bool isErrorInSendingEmail;
   final formKey = GlobalKey<FormState>();
+  AuthService authService = new AuthService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   TextEditingController emailEditingController = new TextEditingController();
 
-  @override
-  void initState() {
-    print(widget.theme);
-    super.initState();
+  Future<bool> verifyAndSendVerificationEmail() async {
+
+    setState(() {
+      isErrorInSendingEmail = false;
+    });
+
+    if (formKey.currentState.validate()) {
+      formKey.currentState.save();
+      try {
+        final arr = await _auth.fetchSignInMethodsForEmail(
+                  email: emailEditingController.text);
+
+        if (arr.isNotEmpty) {
+          // Sending forgot password email to emailEditingController.text email address
+          try {
+            await _auth.sendPasswordResetEmail(
+                email: emailEditingController.text);
+          }
+          catch(e) {
+            print("Error while sending Email: $e");
+            setState(() {
+              isErrorInSendingEmail = true;
+            });
+          }
+          final alertDialog = AlertDialog(
+            content: Text(
+              "An Email has been send to ${emailEditingController.text} with password reset link!",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text(
+                    "OK",
+                    style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w300
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(context, MaterialPageRoute(
+                        builder: (context) => HomePage(
+                            theme: widget.theme,
+                            toggleTheme: widget.toggleTheme,
+                            lightThemeColor: widget.lightThemeColor
+                        )
+                      ),
+                    );
+                  }
+              ),
+            ],
+          );
+          return showDialog(
+              barrierDismissible: true,
+              context: context,
+              builder:
+                  (context) =>
+                    alertDialog
+          );
+        } else {
+          setState(() {
+            isErrorInSendingEmail = true;
+          });
+        }
+      }
+      catch(e) {
+        print("Error: $e");
+      }
+    }
+    return null;
   }
 
-  void sendVerificationEmail() async {
-    print("Sending Email!");
+  @override
+  initState() {
+    isErrorInSendingEmail = false;
+    super.initState();
   }
 
   @override
@@ -91,6 +166,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             width: 1,
                           ),
                         ),
+                        errorText: isErrorInSendingEmail ? "This Email has not yet been registered!" : null,
                         focusedBorder: OutlineInputBorder(
                           gapPadding: 0,
                           borderRadius: new BorderRadius.circular(32.0),
@@ -107,7 +183,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 SizedBox(height: 30),
                 GestureDetector(
                   onTap: () async {
-                    await sendVerificationEmail();
+                    verifyAndSendVerificationEmail();
                   },
                   child: Container(
                     child: Container(
@@ -124,7 +200,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child:
                         Text(
-                          "Send Me Email Verification",
+                          "Send Me Verification Email",
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,

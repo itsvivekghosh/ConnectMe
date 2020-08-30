@@ -25,13 +25,13 @@ class AuthService {
       AuthResult result = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
       var user = result.user;
-      try {
-        await user.sendEmailVerification();
-        return user.uid;
-      } catch (e) {
-        print("An error occurred while trying to send email verification");
-        print(e.message);
-      }
+      // try {
+      //   await user.sendEmailVerification();
+      //   return user.uid;
+      // } catch (e) {
+      //   print("An error occurred while trying to send email verification");
+      //   print(e.message);
+      // }
       return _userFromFirebaseUser(user);
     } catch (e) {
       print(e.toString());
@@ -39,7 +39,7 @@ class AuthService {
     }
   }
 
-  Future resetPass(String email) async {
+  Future resetPasswordUsingEmail(String email) async {
     try {
       return await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
