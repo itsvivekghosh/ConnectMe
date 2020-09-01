@@ -63,14 +63,14 @@ class _SignUpState extends State<SignUp> {
             return null;
           });
 
+          Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => ChatRoom(
                 theme: widget.theme,
                 toggleTheme: widget.toggleTheme,
-                lightThemeColor: widget.lightThemeColor,
-                currentLoginUser: currentLoginUser,
+                lightThemeColor: widget.lightThemeColor
               ),
             ),
           );

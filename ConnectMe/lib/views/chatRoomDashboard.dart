@@ -1,5 +1,6 @@
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/helper/helperFunctions.dart';
+import 'package:ConnectMe/main.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +9,9 @@ class ChatRoom extends StatefulWidget {
   final String theme;
   final Function toggleTheme;
   final Color lightThemeColor;
-  final String currentLoginUser;
+  final bool isGoogleSignIn;
 
-  ChatRoom({this.theme, this.toggleTheme, this.lightThemeColor, this.currentLoginUser});
+  ChatRoom({this.theme, this.toggleTheme, this.lightThemeColor, this.isGoogleSignIn});
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -20,64 +21,12 @@ class _ChatRoomState extends State<ChatRoom> {
 
   AuthService authService = new AuthService();
 
-  Future<bool> _onLogoutButtonPressed(){
-    final alertDialog = AlertDialog(
-      content: Text(
-          "Are you sure you want to Logout?",
-        style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-        ),
-      ),
-      actions: <Widget>[
-        FlatButton(
-            child: Text(
-              "I'm Sure",
-              style: TextStyle(
-                  color: Colors.green,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w400
-              ),
-            ),
-            onPressed: () {
-              authService.signOut();
-              Navigator.pushReplacement(context, MaterialPageRoute(
-                  builder: (context) => HomePage(
-                      theme: widget.theme,
-                      toggleTheme: widget.toggleTheme,
-                      lightThemeColor: widget.lightThemeColor
-                  )
-              ));
-            }
-        ),
-        FlatButton(
-          child: Text(
-            "Not Really",
-            style: TextStyle(
-                color: Colors.green,
-                fontSize: 20,
-                fontWeight: FontWeight.w400
-            ),
-          ),
-          onPressed: () =>
-              Navigator.of(context).pop(),
-        )
-      ],
-    );
-    return showDialog(
-        barrierDismissible: true,
-        context: context,
-        builder: (context) =>
-        alertDialog
-    );
-  }
-
-  Choice _selectedChoice = null;
-  String titleName;
+  Choice selectedChoice;
+  String loginUsername;
 
   _select(Choice choice) {
     setState(() {
-      _selectedChoice = choice;
+      selectedChoice = choice;
     });
   }
 
@@ -90,7 +39,7 @@ class _ChatRoomState extends State<ChatRoom> {
   getUserInfo() async {
     Constants.myName = await HelperFunctions.getUserNameSharedPreference();
     setState(() {
-      titleName = Constants.myName;
+      loginUsername = Constants.myName;
     });
   }
 
@@ -98,7 +47,7 @@ class _ChatRoomState extends State<ChatRoom> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("$titleName"),
+        title: Text("$loginUsername"),
         actions: <Widget>[
           PopupMenuButton<Choice>(
             onSelected: _select,
@@ -113,7 +62,14 @@ class _ChatRoomState extends State<ChatRoom> {
           ),
           GestureDetector(
             onTap: () {
-              _onLogoutButtonPressed();
+              Navigator.pushReplacement(context, MaterialPageRoute(
+                  builder: (context) => HomePage(
+                    theme: widget.theme,
+                    toggleTheme: widget.toggleTheme,
+                    lightThemeColor: widget.lightThemeColor,
+                  )
+              ));
+              authService.signOut();
             },
             child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -122,7 +78,7 @@ class _ChatRoomState extends State<ChatRoom> {
           ),
         ],
       ),
-      body: Text('Welcome ${widget.currentLoginUser}'),
+      body: Text('Welcome $loginUsername'),
       floatingActionButton: FloatingActionButton(
         child: Icon(
           Icons.search,

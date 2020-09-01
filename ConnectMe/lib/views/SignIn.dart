@@ -8,7 +8,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
 
 class SignIn extends StatefulWidget {
   final String theme;
@@ -23,6 +25,7 @@ class SignIn extends StatefulWidget {
 
 class _SignInState extends State<SignIn> {
 
+  bool _loading = true;
   bool isLoading = false;
   bool isEmailWrong = false;
   bool isPasswordWrong = false;
@@ -33,6 +36,7 @@ class _SignInState extends State<SignIn> {
   String emailErrorText = '';
   String passwordErrorText = '';
 
+  GoogleSignIn googleAuth = new GoogleSignIn();
   TextEditingController emailTextEditingController = new TextEditingController();
   TextEditingController passwordTextEditingController = new TextEditingController();
 
@@ -46,8 +50,47 @@ class _SignInState extends State<SignIn> {
     _passwordVisible = false;
     isPasswordWrong = false;
     isEmailWrong = false;
-
+    Future.delayed(Duration(seconds: 1, milliseconds: 100), () {
+      setState(() {
+        _loading = false;
+      });
+    });
     super.initState();
+  }
+
+  Future<void> _googleSignUp() async {
+    try {
+      final GoogleSignIn _googleSignIn = new GoogleSignIn(
+        scopes: ['email'],
+        hostedDomain: "",
+        clientId: "",
+      );
+      final FirebaseAuth _auth = FirebaseAuth.instance;
+      final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final AuthCredential credential  = GoogleAuthProvider.getCredential(
+          idToken: googleAuth.idToken, accessToken: googleAuth.accessToken
+      );
+
+      final AuthResult user = await _auth.signInWithCredential(credential);
+      print("Signed In: $user");
+
+      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatRoom(
+              theme: widget.theme,
+              toggleTheme: widget.toggleTheme,
+              lightThemeColor: widget.lightThemeColor,
+              isGoogleSignIn: true
+          ),
+        ),
+      );
+    } catch(e) {
+      print(e.message);
+    }
   }
 
   signMeIn() async {
@@ -76,6 +119,7 @@ class _SignInState extends State<SignIn> {
           });
 
           HelperFunctions.saveUserLoggedInSharedPreference(true);
+          Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -83,7 +127,7 @@ class _SignInState extends State<SignIn> {
                 theme: widget.theme,
                 toggleTheme: widget.toggleTheme,
                 lightThemeColor: widget.lightThemeColor,
-                currentLoginUser: currentLoginUser,
+                isGoogleSignIn: false
               ),
             ),
           );
@@ -128,13 +172,19 @@ class _SignInState extends State<SignIn> {
       }
     } catch(e) {
       print("Error while Signing In is: ${e.toString()}");
-      if (e.code == 'ERROR_WRONG_PASSWORD') {
+      if (e is PlatformException && e.code == 'ERROR_USER_NOT_FOUND') {
+        setState(() {
+          isEmailWrong = true;
+          emailErrorText = 'User not found';
+        });
+      }
+      else if (e is PlatformException && e.code == 'ERROR_WRONG_PASSWORD') {
         setState(() {
           isPasswordWrong = true;
           passwordErrorText = 'Please check your password';
         });
       }
-      else if (e.code == 'ERROR_INVALID_EMAIL') {
+      if (e is PlatformException && e.code == 'ERROR_INVALID_EMAIL') {
         setState(() {
           isEmailWrong = true;
           emailErrorText = 'Enter Valid email address';
@@ -190,7 +240,7 @@ class _SignInState extends State<SignIn> {
           )
         ],
       ),
-      body: isLoading ?
+      body: isLoading || _loading ?
       Center(
         child: CircularProgressIndicator(
             valueColor: new AlwaysStoppedAnimation<Color>(
@@ -332,12 +382,38 @@ class _SignInState extends State<SignIn> {
                           context, "Sign In", 18, widget.lightThemeColor
                       ),
                     ),
+                    SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () {
+                        print("signing in with google");
+                        // authService.signInWithGoogle().whenComplete(() {
+                        //   Navigator.of(context).push(
+                        //     MaterialPageRoute(
+                        //       builder: (context) {
+                        //         return ChatRoom(
+                        //             theme: widget.theme,
+                        //             toggleTheme: widget.toggleTheme,
+                        //             lightThemeColor: widget.lightThemeColor,
+                        //             isGoogleSignIn: true
+                        //         );
+                        //       },
+                        //     ),
+                        //   );
+                        // }).catchError((onError) {
+                        //   print("error signing in!!!");
+                        // });
+                        _googleSignUp();
+                      },
+                      child: Container(
+                        child: widget.theme == 'dark' ?
+                          customButtonGoogleDark(context, "Sign In with Google", 18, Colors.white) :
+                          customButtonGoogleLight(context, "Sign In with Google", 18, Colors.white),
+                      ),
+                    ),
                     SizedBox(height: 10,),
-                    widget.theme == 'dark' ? customButtonDark(context, "Sign In with Google", 18, Colors.white) :
-                      customButtonLight(context, "Sign In with Google", 18, Colors.white),
-                    SizedBox(height: 10,),
-                    widget.theme == 'dark' ? customButtonDark(context, "Sign In with Facebook", 18, Colors.blue) :
-                      customButtonLight(context, "Sign In with Facebook", 18, Colors.blue),
+                    widget.theme == 'dark' ?
+                      customButtonFacebookDark(context, "Sign In with Facebook", 18, Colors.blue) :
+                      customButtonFacebookLight(context, "Sign In with Facebook", 18, Colors.blue),
                     SizedBox(height: 50),
                     widget.theme == 'dark' ? Text(
                       "Made with Love in India",
@@ -355,39 +431,10 @@ class _SignInState extends State<SignIn> {
                   ],
                 )
               ),
-            ]
+            ],
           ),
         ),
       ),
     );
   }
 }
-
-/*
-try {
-                    setState(() {
-                      wrongEmail = false;
-                      wrongPassword = false;
-                    });
-                    final newUser = await _auth.signInWithEmailAndPassword(
-                        email: email, password: password);
-                    if (newUser != null) {
-                      Navigator.pushNamed(context, Done.id);
-                    }
-                  } catch (e) {
-                    print(e.code);
-                    if (e.code == 'ERROR_WRONG_PASSWORD') {
-                      setState(() {
-                        wrongPassword = true;
-                      });
-                    } else {
-                      setState(() {
-                        emailText = 'User doesn\'t exist';
-                        passwordText = 'Please check your email';
-
-                        wrongPassword = true;
-                        wrongEmail = true;
-                      });
-                    }
-                  }
- */

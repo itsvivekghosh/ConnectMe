@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Connect Me',
+      title: 'ConnectMe',
       theme: theme == 'dark' ? ThemeData.dark()
           : ThemeData(
         cursorColor: lightThemeColor,

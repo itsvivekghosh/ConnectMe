@@ -46,6 +46,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               isErrorInSendingEmail = true;
             });
           }
+
           final alertDialog = AlertDialog(
             content: Text(
               "An Email has been send to ${emailEditingController.text} with password reset link!",
