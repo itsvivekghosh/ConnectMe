@@ -7,6 +7,7 @@ import 'package:ConnectMe/services/database.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:progress_indicators/progress_indicators.dart';
 
 class SignUp extends StatefulWidget {
   final String theme;
@@ -22,6 +23,7 @@ class _SignUpState extends State<SignUp> {
 
   bool _passwordVisible = false;
   bool isLoading = false;
+  bool _loading = true;
   String currentLoginUser;
   final formKey = GlobalKey<FormState>();
   TextEditingController emailEditingController = new TextEditingController();
@@ -116,6 +118,13 @@ class _SignUpState extends State<SignUp> {
   void initState() {
     _passwordVisible = false;
     super.initState();
+    if (mounted) {
+      Future.delayed(Duration(milliseconds: 1000), () {
+        setState(() {
+          _loading = false;
+        });
+      });
+    }
   }
 
   @override
@@ -144,15 +153,14 @@ class _SignUpState extends State<SignUp> {
           )
         ],
       ),
-      body: isLoading ? Container(
+      body: isLoading || _loading ? Container(
           child: Center(
-            child: CircularProgressIndicator(
-              valueColor: new AlwaysStoppedAnimation<Color>(
-                  widget.theme == 'dark' ? Colors.white : Colors.green
-              )
+            child: JumpingDotsProgressIndicator(
+              fontSize: 55.0,
+              color: widget.theme == 'dark' ? Colors.white : Colors.green,
             ),
-          ),
-        ) :  Container(
+          )
+      ) :  Container(
             alignment: Alignment.center,
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 32),

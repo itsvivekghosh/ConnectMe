@@ -28,13 +28,13 @@ class AuthService {
       AuthResult result = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
       var user = result.user;
-      // try {
-      //   await user.sendEmailVerification();
-      //   return user.uid;
-      // } catch (e) {
-      //   print("An error occurred while trying to send email verification");
-      //   print(e.message);
-      // }
+      try {
+        await user.sendEmailVerification();
+        return user.uid;
+      } catch (e) {
+        print("An error occurred while trying to send email verification");
+        print(e.message);
+      }
       return _userFromFirebaseUser(user);
     } catch (e) {
       print(e.toString());

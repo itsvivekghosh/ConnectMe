@@ -10,6 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:progress_indicators/progress_indicators.dart';
 
 
 class SignIn extends StatefulWidget {
@@ -50,12 +51,14 @@ class _SignInState extends State<SignIn> {
     _passwordVisible = false;
     isPasswordWrong = false;
     isEmailWrong = false;
-    Future.delayed(Duration(seconds: 1, milliseconds: 100), () {
-      setState(() {
-        _loading = false;
-      });
-    });
     super.initState();
+    if (mounted) {
+      Future.delayed(Duration(milliseconds: 1000), () {
+        setState(() {
+          _loading = false;
+        });
+      });
+    }
   }
 
   Future<void> _googleSignUp() async {
@@ -72,7 +75,6 @@ class _SignInState extends State<SignIn> {
       final AuthCredential credential  = GoogleAuthProvider.getCredential(
           idToken: googleAuth.idToken, accessToken: googleAuth.accessToken
       );
-
       final AuthResult user = await _auth.signInWithCredential(credential);
       print("Signed In: $user");
 
@@ -96,6 +98,7 @@ class _SignInState extends State<SignIn> {
   signMeIn() async {
 
     final FirebaseAuth _auth = FirebaseAuth.instance;
+
     if (formKey.currentState.validate()) {
       setState(() {
         isLoading = true;
@@ -160,13 +163,32 @@ class _SignInState extends State<SignIn> {
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     try {
+      try {
+        if (emailTextEditingController.text.isEmpty || passwordTextEditingController.text.isEmpty) {
+          print("Error Signing in");
+          throw PlatformException(
+            code: "EMAIL OR PASSWORD CANNOT BE NULL"
+          );
+        }
+      } catch(e) {
+        print("exception caught: 'EMAIL OR PASSWORD CANNOT BE NULL'");
+        setState(() {
+          isEmailWrong = true;
+          isPasswordWrong = true;
+          if (emailTextEditingController.text.isEmpty)
+            emailErrorText = 'Email cannot be empty';
+          if (passwordTextEditingController.text.isEmpty)
+            passwordErrorText = 'Password cannot be empty';
+        });
+        return;
+      }
+
       setState(() {
         isEmailWrong = false;
         isPasswordWrong = false;
       });
       final checkUser = await _auth.signInWithEmailAndPassword(
           email: emailTextEditingController.text, password: passwordTextEditingController.text);
-
       if (checkUser != null) {
         await signMeIn();
       }
@@ -242,10 +264,9 @@ class _SignInState extends State<SignIn> {
       ),
       body: isLoading || _loading ?
       Center(
-        child: CircularProgressIndicator(
-            valueColor: new AlwaysStoppedAnimation<Color>(
-                widget.theme == 'dark' ? Colors.white : Colors.green
-            )
+        child: JumpingDotsProgressIndicator(
+          fontSize: 55.0,
+          color: widget.theme == 'dark' ? Colors.white : Colors.green,
         ),
       ) :
       Container(
@@ -384,25 +405,13 @@ class _SignInState extends State<SignIn> {
                     ),
                     SizedBox(height: 10),
                     GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         print("signing in with google");
-                        // authService.signInWithGoogle().whenComplete(() {
-                        //   Navigator.of(context).push(
-                        //     MaterialPageRoute(
-                        //       builder: (context) {
-                        //         return ChatRoom(
-                        //             theme: widget.theme,
-                        //             toggleTheme: widget.toggleTheme,
-                        //             lightThemeColor: widget.lightThemeColor,
-                        //             isGoogleSignIn: true
-                        //         );
-                        //       },
-                        //     ),
-                        //   );
-                        // }).catchError((onError) {
-                        //   print("error signing in!!!");
-                        // });
-                        _googleSignUp();
+                        try {
+                          await _googleSignUp();
+                        } catch(e) {
+                          print("Error while Signing In...");
+                        }
                       },
                       child: Container(
                         child: widget.theme == 'dark' ?
