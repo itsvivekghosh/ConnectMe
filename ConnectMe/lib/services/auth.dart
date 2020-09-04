@@ -1,6 +1,7 @@
 import 'package:ConnectMe/models/Person.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -55,7 +56,23 @@ class AuthService {
   Future<String> signOut() async {
     await _auth.signOut();
     await googleSignIn.signOut();
-    return "User Signed Out";
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('email')
+      .then((value) {
+        print("$value removed");
+      })
+      .catchError((onError) {
+        print("Error removing password preferences");
+      });
+    prefs.remove('password')
+        .then((value) {
+          print("$value removed");
+        })
+        .catchError((onError) {
+          print("Error removing password preferences");
+        });
+
+    return "User Signed Out Successfully!";
   }
 
   Future<void> signInWithGoogle() async {
@@ -73,8 +90,17 @@ class AuthService {
           idToken: googleSignInAuthentication.idToken,
           accessToken: googleSignInAuthentication.accessToken
       );
-
       final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
+
+      // saving logged in State in local drive
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      prefs.setString('email', user.email.toString()).then((value) {
+        print("Google Sign in Email saved!");
+      }).catchError((onError) {
+        print("Error on saving Email Preferences");
+      });
+
       print("Signed in as: ${user.displayName}");
     } catch(e) {
         print("error while sign in: $e");

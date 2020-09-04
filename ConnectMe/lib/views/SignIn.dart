@@ -1,3 +1,4 @@
+import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/services/database.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:progress_indicators/progress_indicators.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class SignIn extends StatefulWidget {
@@ -75,9 +77,30 @@ class _SignInState extends State<SignIn> {
       final AuthCredential credential  = GoogleAuthProvider.getCredential(
           idToken: googleAuth.idToken, accessToken: googleAuth.accessToken
       );
-      final AuthResult user = await _auth.signInWithCredential(credential);
+      final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
       HelperFunctions.saveUserLoggedInSharedPreference(true);
-      print("Signed In: $user");
+
+      // saving logged in State in local drive
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('email', user.email)
+          .then((value) {
+            print("Saved email as ${user.email}");
+          })
+          .catchError((onError) {
+            print("Error storing email preferences");
+          });
+
+      prefs.setString('name', user.displayName)
+          .then((value) {
+            print("Saved name as ${user.displayName}");
+          })
+          .catchError((onError) {
+            print("Error storing name preferences");
+          });
+      Constants.userName = user.displayName;
+      Constants.userEmail = user.email;
+
+      print("Signed In as: ${user.displayName}");
 
       Navigator.pop(context);
       Navigator.pushReplacement(
@@ -115,6 +138,24 @@ class _SignInState extends State<SignIn> {
               userInfoSnapshot.documents[0].data["name"]);
           HelperFunctions.saveUserEmailSharedPreference(
               userInfoSnapshot.documents[0].data["email"]);
+
+          // saving logged in State in local drive
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString('email', emailTextEditingController.text).then((value) {
+            print("saved as ${emailTextEditingController.text}!");
+          }).catchError((onError) {
+            print("Error on saving Email Preferences");
+          });
+          var name = await HelperFunctions.getUserNameSharedPreference();
+          prefs.setString('name', name)
+              .then((value) {
+                print("saved as $name!");
+              })
+              .catchError((onError) {
+                print("Error on saving name Preferences");
+              });
+          Constants.userName = name;
+          Constants.userEmail = emailTextEditingController.text;
 
           Navigator.pop(context);
           Navigator.pushReplacement(

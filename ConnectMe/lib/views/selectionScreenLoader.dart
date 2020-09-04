@@ -2,6 +2,7 @@ import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SelectionScreenLoader extends StatefulWidget {
   @override
@@ -29,10 +30,16 @@ class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
   }
 
   getLoggedInState() async {
-    await HelperFunctions().getUserLoggedInSharedPreference().then((value){
-      setState(() {
-        userIsLoggedIn  = value;
-      });
+    // await HelperFunctions().getUserLoggedInSharedPreference().then((value){
+    //   setState(() {
+    //     userIsLoggedIn  = value;
+    //   });
+    // });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var email = prefs.getString('email');
+    print(email);
+    setState(() {
+      userIsLoggedIn = (email != null);
     });
   }
 

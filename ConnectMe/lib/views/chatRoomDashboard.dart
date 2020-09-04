@@ -1,8 +1,6 @@
 import 'package:ConnectMe/helper/constants.dart';
-import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/views/home.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ChatRoom extends StatefulWidget {
@@ -21,6 +19,7 @@ class _ChatRoomState extends State<ChatRoom> {
 
   AuthService authService = new AuthService();
   String loggedInUsername;
+  String loggedInEmail;
   Choice selectedChoice;
 
   _select(Choice choice) {
@@ -31,32 +30,14 @@ class _ChatRoomState extends State<ChatRoom> {
 
   @override
   void initState() {
-    getUserInfo();
     super.initState();
-  }
-
-  getUserInfo() async {
-    Constants.myName = await HelperFunctions.getUserNameSharedPreference();
-    FirebaseUser _user = await FirebaseAuth.instance.currentUser();
-
-    if (_user != null)
-      if (Constants.myName != null && _user.displayName == null) {
-        setState(() {
-          Constants.loginUsername = Constants.myName;
-        });
-      }
-      else if (_user.displayName != null) {
-        setState(() {
-          Constants.loginUsername = _user.displayName;
-        });
-      }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("${Constants.loginUsername}"),
+        title: Text("${Constants.userName}"),
         actions: <Widget>[
           PopupMenuButton<Choice>(
             onSelected: _select,
@@ -87,7 +68,7 @@ class _ChatRoomState extends State<ChatRoom> {
           ),
         ],
       ),
-      body: Text('Welcome ${Constants.loginUsername}'),
+      body: Text('Welcome ${Constants.userName}'),
       floatingActionButton: FloatingActionButton(
         child: Icon(
           Icons.search,

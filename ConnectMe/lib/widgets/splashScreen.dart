@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:ConnectMe/helper/constants.dart';
-import 'package:ConnectMe/helper/helperFunctions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ConnectMe/views/selectionScreenLoader.dart';
 import 'package:progress_indicators/progress_indicators.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -17,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     getUserInfo();
     super.initState();
-    Timer(Duration(seconds: 0), () => Navigator.pushReplacement(
+    Timer(Duration(seconds: 1), () => Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) {
         return SelectionScreenLoader();
       })
@@ -25,20 +24,16 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   getUserInfo() async {
-    Constants.myName = await HelperFunctions.getUserNameSharedPreference();
-    FirebaseUser _user = await FirebaseAuth.instance.currentUser();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var email = prefs.getString('email');
+    var name = prefs.getString('name');
+    print("Logged in email:" + email.toString());
+    print("Logged in name:" + name.toString());
 
-    if (_user != null)
-      if (Constants.myName != null && _user.displayName == null) {
-        setState(() {
-          Constants.loginUsername = Constants.myName;
-        });
-      }
-      else if (_user.displayName != null) {
-        setState(() {
-          Constants.loginUsername = _user.displayName;
-        });
-      }
+    setState(() {
+      Constants.userName = name;
+      Constants.userEmail = email;
+    });
   }
 
   @override

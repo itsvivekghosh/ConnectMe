@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class Constants{
-  static String myName;
-  static String loginUsername;
+  static String userName;
+  static String userEmail;
+  static String phoneNumber;
 }
 
 const kPrimaryColor = Color(0xFFFF7643);

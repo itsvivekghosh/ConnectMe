@@ -1,3 +1,4 @@
+import 'package:ConnectMe/helper/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:progress_indicators/progress_indicators.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUp extends StatefulWidget {
   final String theme;
@@ -64,6 +66,25 @@ class _SignUpState extends State<SignUp> {
             currentLoginUser = user.uid;
             return null;
           });
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString('name', userNameEditingController.text).then((value) {
+            print("saved name as ${userNameEditingController.text}!");
+          }).catchError((onError) {
+            print("Error on saving Username Preferences");
+          });
+          prefs.setString('email', emailEditingController.text).then((value) {
+            print("saved email as ${emailEditingController.text}!");
+          }).catchError((onError) {
+            print("Error on saving Email Preferences");
+          });
+          prefs.setString('password', passwordEditingController.text).then((value) {
+            print("saved password as ${passwordEditingController.text}!");
+          }).catchError((onError) {
+            print("Error on saving Password Preferences");
+          });
+          Constants.userName = userNameEditingController.text;
+          Constants.userEmail = emailEditingController.text;
 
           Navigator.pop(context);
           Navigator.pushReplacement(
