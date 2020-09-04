@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/helper/helperFunctions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:ConnectMe/views/selectionScreenLoader.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -12,12 +15,30 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
+    getUserInfo();
     super.initState();
-    Timer(Duration(seconds: 5), () => Navigator.pushReplacement(
+    Timer(Duration(seconds: 0), () => Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) {
         return SelectionScreenLoader();
       })
     ));
+  }
+
+  getUserInfo() async {
+    Constants.myName = await HelperFunctions.getUserNameSharedPreference();
+    FirebaseUser _user = await FirebaseAuth.instance.currentUser();
+
+    if (_user != null)
+      if (Constants.myName != null && _user.displayName == null) {
+        setState(() {
+          Constants.loginUsername = Constants.myName;
+        });
+      }
+      else if (_user.displayName != null) {
+        setState(() {
+          Constants.loginUsername = _user.displayName;
+        });
+      }
   }
 
   @override

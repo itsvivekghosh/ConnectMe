@@ -76,6 +76,7 @@ class _SignInState extends State<SignIn> {
           idToken: googleAuth.idToken, accessToken: googleAuth.accessToken
       );
       final AuthResult user = await _auth.signInWithCredential(credential);
+      HelperFunctions.saveUserLoggedInSharedPreference(true);
       print("Signed In: $user");
 
       Navigator.pop(context);
@@ -95,50 +96,42 @@ class _SignInState extends State<SignIn> {
     }
   }
 
-  signMeIn() async {
-
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  signIn() async {
     if (formKey.currentState.validate()) {
       setState(() {
         isLoading = true;
       });
 
-      HelperFunctions.saveUserEmailSharedPreference(emailTextEditingController.text);
-      databaseMethods.getUsersByUserEmail(emailTextEditingController.text)
-          .then((val) {
-        queryUserSnapshot = val;
-        HelperFunctions
-            .saveUserNameSharedPreference(queryUserSnapshot.documents[0].data['name']);
-      });
-
-      await authService.signInWithEmailAndPassword(
-          emailTextEditingController.text,
-          passwordTextEditingController.text).then((val) async {
-        if (val != null) {
-          final FirebaseUser user = await _auth.currentUser().then((FirebaseUser user) {
-            currentLoginUser = user.uid;
-            return null;
-          });
+      await authService
+          .signInWithEmailAndPassword(
+          emailTextEditingController.text, passwordTextEditingController.text)
+          .then((result) async {
+        if (result != null)  {
+          QuerySnapshot userInfoSnapshot =
+          await DatabaseMethods().getUserInfo(emailTextEditingController.text);
 
           HelperFunctions.saveUserLoggedInSharedPreference(true);
+          HelperFunctions.saveUserNameSharedPreference(
+              userInfoSnapshot.documents[0].data["name"]);
+          HelperFunctions.saveUserEmailSharedPreference(
+              userInfoSnapshot.documents[0].data["email"]);
+
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => ChatRoom(
-                theme: widget.theme,
-                toggleTheme: widget.toggleTheme,
-                lightThemeColor: widget.lightThemeColor,
-                isGoogleSignIn: false
+                  theme: widget.theme,
+                  toggleTheme: widget.toggleTheme,
+                  lightThemeColor: widget.lightThemeColor,
+                  isGoogleSignIn: false
               ),
             ),
           );
-        }
-        else {
-          print("Error Signing in");
+        } else {
           setState(() {
             isLoading = false;
+            //show snackbar
           });
         }
       });
@@ -190,7 +183,7 @@ class _SignInState extends State<SignIn> {
       final checkUser = await _auth.signInWithEmailAndPassword(
           email: emailTextEditingController.text, password: passwordTextEditingController.text);
       if (checkUser != null) {
-        await signMeIn();
+        await signIn();
       }
     } catch(e) {
       print("Error while Signing In is: ${e.toString()}");
