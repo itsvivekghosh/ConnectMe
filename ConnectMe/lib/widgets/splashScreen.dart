@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/helper/helperFunctions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ConnectMe/views/selectionScreenLoader.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -12,13 +14,14 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
+  bool userSignedIn = false;
   @override
   void initState() {
     getUserInfo();
     super.initState();
-    Timer(Duration(seconds: 1), () => Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) {
-        return SelectionScreenLoader();
+    Timer(Duration(seconds: 3), () => Navigator.pushReplacement(
+        context, CupertinoPageRoute(builder: (context) {
+        return SelectionScreenLoader(userLoggedIn: userSignedIn);
       })
     ));
   }
@@ -34,6 +37,14 @@ class _SplashScreenState extends State<SplashScreen> {
       Constants.userName = name;
       Constants.userEmail = email;
     });
+
+    bool isLoggedIn;
+    await HelperFunctions().getUserLoggedInSharedPreference().then((value) {
+      isLoggedIn = value;
+    }).catchError((e) {print(e.message);});
+    print("Login Status is: $email $isLoggedIn");
+    userSignedIn = email != null && isLoggedIn != null;
+    print("user signed in: $userSignedIn");
   }
 
   @override

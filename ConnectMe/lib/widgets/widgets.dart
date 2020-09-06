@@ -106,10 +106,13 @@ Widget customButtonFacebookDark(dynamic context, String text, double fontSize, C
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image(
-              image: AssetImage("assets/facebook_logo.png"),
-              height: 20.0,
-              color: Colors.white
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4.0),
+            child: Image(
+                image: AssetImage("assets/facebook_logo.png"),
+                height: 18.0,
+                color: Colors.white,
+            ),
           ),
           SizedBox(width: 8,),
           Container(

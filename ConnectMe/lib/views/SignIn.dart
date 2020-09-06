@@ -1,18 +1,18 @@
-import 'package:ConnectMe/helper/constants.dart';
-import 'package:ConnectMe/helper/helperFunctions.dart';
-import 'package:ConnectMe/services/auth.dart';
-import 'package:ConnectMe/services/database.dart';
-import 'package:ConnectMe/views/chatRoomDashboard.dart';
-import 'package:ConnectMe/views/forgotPassword.dart';
-import 'package:ConnectMe/widgets/widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:ConnectMe/services/auth.dart';
+import 'package:ConnectMe/widgets/widgets.dart';
+import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/services/database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:progress_indicators/progress_indicators.dart';
+import 'package:ConnectMe/views/forgotPassword.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ConnectMe/helper/helperFunctions.dart';
+import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:progress_indicators/progress_indicators.dart';
 
 
 class SignIn extends StatefulWidget {
@@ -105,7 +105,7 @@ class _SignInState extends State<SignIn> {
       Navigator.pop(context);
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
+        CupertinoPageRoute(
           builder: (context) => ChatRoom(
               theme: widget.theme,
               toggleTheme: widget.toggleTheme,
@@ -160,7 +160,7 @@ class _SignInState extends State<SignIn> {
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ChatRoom(
                   theme: widget.theme,
                   toggleTheme: widget.toggleTheme,
@@ -172,7 +172,6 @@ class _SignInState extends State<SignIn> {
         } else {
           setState(() {
             isLoading = false;
-            //show snackbar
           });
         }
       });
@@ -180,7 +179,8 @@ class _SignInState extends State<SignIn> {
   }
 
   void callForgotPassword() {
-    Navigator.push(context, MaterialPageRoute(
+    Navigator.push(context,
+      CupertinoPageRoute(
         builder: (context) {
             return ForgotPassword(
               theme: widget.theme,
@@ -454,9 +454,18 @@ class _SignInState extends State<SignIn> {
                       ),
                     ),
                     SizedBox(height: 10,),
-                    widget.theme == 'dark' ?
-                      customButtonFacebookDark(context, "Sign In with Facebook", 18, Colors.blue) :
-                      customButtonFacebookLight(context, "Sign In with Facebook", 18, Colors.blue),
+                    GestureDetector(
+                      onTap: () {
+                        print('Sign In With Facebook');
+                        // _loginWithFacebook();
+                        // print(_message);
+                      },
+                      child: Container(
+                        child: widget.theme == 'dark' ?
+                          customButtonFacebookDark(context, "Sign In with Facebook", 18, Colors.blue) :
+                          customButtonFacebookLight(context, "Sign In with Facebook", 18, Colors.blue),
+                      ),
+                    ),
                     SizedBox(height: 50),
                     widget.theme == 'dark' ? Text(
                       "Made with Love in India",

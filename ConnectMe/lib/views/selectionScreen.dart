@@ -1,5 +1,6 @@
 import 'package:ConnectMe/views/SignIn.dart';
 import 'package:ConnectMe/views/SignUp.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 
@@ -81,7 +82,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SignUp(
+                        CupertinoPageRoute(builder: (context) => SignUp(
                             theme: widget.theme,
                             toggleTheme: widget.toggleTheme,
                             lightThemeColor: widget.lightThemeColor,
@@ -149,11 +150,12 @@ class _SelectionScreenState extends State<SelectionScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SignIn(
-                      theme: widget.theme,
-                      toggleTheme: widget.toggleTheme,
-                        lightThemeColor: widget.lightThemeColor
-                    ),),
+                      CupertinoPageRoute(builder: (context) => SignIn(
+                        theme: widget.theme,
+                        toggleTheme: widget.toggleTheme,
+                          lightThemeColor: widget.lightThemeColor
+                      ),
+                    ),
                   );
                 },
                 child: Container(

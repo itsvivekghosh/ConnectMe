@@ -23,46 +23,52 @@ class SignUp extends StatefulWidget {
 
 class _SignUpState extends State<SignUp> {
 
-  bool _passwordVisible = false;
-  bool isLoading = false;
   bool _loading = true;
   String currentLoginUser;
+  bool _passwordVisible = false;
   final formKey = GlobalKey<FormState>();
   TextEditingController emailEditingController = new TextEditingController();
   TextEditingController userNameEditingController = new TextEditingController();
   TextEditingController passwordEditingController = new TextEditingController();
   TextEditingController phoneNumberEditingController = new TextEditingController();
 
-  AuthService authService = new AuthService();
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   bool isErrorInSignUp = false;
   String errorSignUpMessage = '';
+  AuthService authService = new AuthService();
+  DatabaseMethods databaseMethods = new DatabaseMethods();
 
-  signUp() async {
+  void checkAndSignMeIn() async {
+    setState(() {
+      isErrorInSignUp = false;
+      errorSignUpMessage = null;
+    });
     if (formKey.currentState.validate()) {
-      setState(() {
-        isLoading = true;
-        errorSignUpMessage = '';
-      });
-
       Map<String, String> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
-        'phoneNumber': phoneNumberEditingController.text.toString(),
+        'phoneNumber': phoneNumberEditingController.text,
       };
 
       HelperFunctions.saveUserEmailSharedPreference(emailEditingController.text);
       HelperFunctions.saveUserNameSharedPreference(userNameEditingController.text);
-      final FirebaseAuth _auth = FirebaseAuth.instance;
+      FirebaseAuth _auth = FirebaseAuth.instance;
 
-      await authService
-          .signUpWithEmailAndPassword(
-            emailEditingController.text, passwordEditingController.text)
-            .then(
-              (value) async {
-          databaseMethods.uploadUserInfo(userMap);
+      await _auth.createUserWithEmailAndPassword(
+          email: emailEditingController.text, password: passwordEditingController.text)
+        .then((value) async {
+          FirebaseUser user = value.user;
+          DatabaseMethods().uploadUserData(userMap, user.uid);
+
+          // send verification Email
+          try {
+            await user.sendEmailVerification();
+          } catch (e) {
+            print("An error occurred while trying to send email verification");
+            print(e.message);
+          }
+
           HelperFunctions.saveUserLoggedInSharedPreference(true);
-          final FirebaseUser user = await _auth.currentUser().then((FirebaseUser user) {
+          await _auth.currentUser().then((FirebaseUser user) {
             currentLoginUser = user.uid;
             return null;
           });
@@ -89,55 +95,29 @@ class _SignUpState extends State<SignUp> {
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
               builder: (context) => ChatRoom(
-                theme: widget.theme,
-                toggleTheme: widget.toggleTheme,
-                lightThemeColor: widget.lightThemeColor
+                  theme: widget.theme,
+                  toggleTheme: widget.toggleTheme,
+                  lightThemeColor: widget.lightThemeColor
               ),
             ),
           );
-        },
-      );
-    }
-  }
-
-  void checkAndSignMeIn() async {
-    print("Validating...");
-    setState(() {
-      isErrorInSignUp = false;
-      errorSignUpMessage = '';
-    });
-    if (RegExp(
-        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(emailEditingController.text) == false) {
-      print('pattern not matched!');
-      setState(() {
-        isErrorInSignUp = true;
-        errorSignUpMessage = 'Enter Valid Email Address';
-      });
-      return null;
-    }
-    try {
-      final FirebaseAuth _auth = FirebaseAuth.instance;
-      final checkUser = await _auth.
-                createUserWithEmailAndPassword(
-                email: emailEditingController.text, password: passwordEditingController.text);
-
-      if (checkUser != null) {
-        await signUp();
-      }
-    } catch(e) {
-      setState(() {
-        isErrorInSignUp = true;
-        errorSignUpMessage = 'This Email is already in use, try again with another email!';
-      });
+        })
+        .catchError((e) {
+          print(e.message.toString());
+          setState(() {
+            isErrorInSignUp = true;
+            errorSignUpMessage = e.message;
+          });
+        });
     }
   }
 
   @override
   void initState() {
     _passwordVisible = false;
+    print(widget.theme);
     super.initState();
     if (mounted) {
       Future.delayed(Duration(milliseconds: 1000), () {
@@ -174,7 +154,7 @@ class _SignUpState extends State<SignUp> {
           )
         ],
       ),
-      body: isLoading || _loading ? Container(
+      body: _loading ? Container(
           child: Center(
             child: JumpingDotsProgressIndicator(
               fontSize: 55.0,
@@ -195,7 +175,8 @@ class _SignUpState extends State<SignUp> {
                           fontSize: 50,
                           fontFamily: 'RobotoMono' ,
                         ),
-                        )),
+                        ),
+                    ),
                 Form(
                   key: formKey,
                     child: Column(
@@ -235,6 +216,12 @@ class _SignUpState extends State<SignUp> {
                         TextFormField(
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
                           controller: emailEditingController,
+                          validator: (value) {
+                            if (emailEditingController.text.isEmpty) return "Enter Email";
+                            return RegExp(
+                                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                                .hasMatch(emailEditingController.text) ? null : "Invalid Email";
+                          },
                           decoration: InputDecoration(
                             labelText: "Email Address",
                             hintText: "Enter your Email Address",

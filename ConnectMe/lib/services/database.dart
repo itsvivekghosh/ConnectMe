@@ -38,4 +38,11 @@ class DatabaseMethods {
       print("Error: ${e.toString()}");
     });
   }
+
+  uploadUserData(userMap, uid) async {
+    print("From upload: $uid");
+    final CollectionReference collectionReference = Firestore.instance.collection('users');
+    return await collectionReference.document(uid).setData(userMap)
+      .catchError((e) => print(e.message));
+  }
 }

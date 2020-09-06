@@ -1,6 +1,8 @@
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/views/home.dart';
+import 'package:ConnectMe/views/profile.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ChatRoom extends StatefulWidget {
@@ -52,14 +54,26 @@ class _ChatRoomState extends State<ChatRoom> {
           ),
           GestureDetector(
             onTap: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(
+              Navigator.push(context, CupertinoPageRoute(
+                  builder: (context) => Profile()
+              ));
+            },
+            child: Container(
+              child: Icon(
+                Icons.account_circle
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              await authService.signOut();
+              Navigator.pushReplacement(context, CupertinoPageRoute(
                   builder: (context) => HomePage(
                     theme: widget.theme,
                     toggleTheme: widget.toggleTheme,
                     lightThemeColor: widget.lightThemeColor,
                   )
               ));
-              authService.signOut();
             },
             child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16),

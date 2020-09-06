@@ -1,4 +1,5 @@
 import 'package:ConnectMe/models/Person.dart';
+import 'package:ConnectMe/services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,14 +25,15 @@ class AuthService {
     }
   }
 
-  Future signUpWithEmailAndPassword(String email, String password) async {
+  Future signUpWithEmailAndPassword(String email, String password, dynamic userMap) async {
     try {
       AuthResult result = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      var user = result.user;
+      FirebaseUser user = result.user;
+      DatabaseMethods().uploadUserData(userMap, user.uid);
       try {
         await user.sendEmailVerification();
-        return user.uid;
+        return _userFromFirebaseUser(user);
       } catch (e) {
         print("An error occurred while trying to send email verification");
         print(e.message);
@@ -54,23 +56,35 @@ class AuthService {
   }
 
   Future<String> signOut() async {
-    await _auth.signOut();
-    await googleSignIn.signOut();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove('email')
-      .then((value) {
+    try {
+      await _auth.signOut();
+      await googleSignIn.signOut();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.remove('email')
+          .then((value) {
         print("$value removed");
       })
-      .catchError((onError) {
+          .catchError((onError) {
         print("Error removing password preferences");
       });
-    prefs.remove('password')
-        .then((value) {
-          print("$value removed");
-        })
-        .catchError((onError) {
-          print("Error removing password preferences");
-        });
+      prefs.remove('password')
+          .then((value) {
+        print("$value removed");
+      })
+          .catchError((onError) {
+        print("Error removing password preferences");
+      });
+      prefs.remove('name')
+          .then((value) {
+        print("$value removed");
+      })
+          .catchError((onError) {
+        print("Error removing name preferences");
+      });
+    } catch(e) {
+      print(e.message);
+    }
 
     return "User Signed Out Successfully!";
   }
@@ -105,5 +119,13 @@ class AuthService {
     } catch(e) {
         print("error while sign in: $e");
     }
+  }
+
+  Future<String> getCurrentPersonID() async {
+    return (await _auth.currentUser()).uid;
+  }
+
+  Future getCurrentUserInfo() async{
+    return await _auth.currentUser();
   }
 }
