@@ -62,26 +62,17 @@ class AuthService {
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.remove('email')
-          .then((value) {
-        print("$value removed");
-      })
           .catchError((onError) {
-        print("Error removing password preferences");
-      });
+            print("Error removing password preferences");
+          });
       prefs.remove('password')
-          .then((value) {
-        print("$value removed");
-      })
           .catchError((onError) {
-        print("Error removing password preferences");
-      });
+            print("Error removing password preferences");
+          });
       prefs.remove('name')
-          .then((value) {
-        print("$value removed");
-      })
           .catchError((onError) {
-        print("Error removing name preferences");
-      });
+            print("Error removing name preferences");
+          });
     } catch(e) {
       print(e.message);
     }

@@ -1,21 +1,21 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:ConnectMe/services/auth.dart';
+import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:ConnectMe/helper/helperFunctions.dart';
-import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/services/database.dart';
+import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
-import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 class SignUp extends StatefulWidget {
-  final String theme;
   final Function toggleTheme;
   final Color lightThemeColor;
-  SignUp({this.theme, this.toggleTheme, this.lightThemeColor});
+  SignUp({this.toggleTheme, this.lightThemeColor});
 
   @override
   _SignUpState createState() => _SignUpState();
@@ -27,6 +27,7 @@ class _SignUpState extends State<SignUp> {
   String currentLoginUser;
   bool _passwordVisible = false;
   final formKey = GlobalKey<FormState>();
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController emailEditingController = new TextEditingController();
   TextEditingController userNameEditingController = new TextEditingController();
   TextEditingController passwordEditingController = new TextEditingController();
@@ -42,11 +43,14 @@ class _SignUpState extends State<SignUp> {
       isErrorInSignUp = false;
       errorSignUpMessage = null;
     });
+
     if (formKey.currentState.validate()) {
+      showLoadingDialog('Creating Your Account', context, _keyLoader);
       Map<String, String> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
         'phoneNumber': phoneNumberEditingController.text,
+        'profileImage': 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png',
       };
 
       HelperFunctions.saveUserEmailSharedPreference(emailEditingController.text);
@@ -89,15 +93,16 @@ class _SignUpState extends State<SignUp> {
           }).catchError((onError) {
             print("Error on saving Password Preferences");
           });
+
           Constants.userName = userNameEditingController.text;
           Constants.userEmail = emailEditingController.text;
 
+          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             CupertinoPageRoute(
               builder: (context) => ChatRoom(
-                  theme: widget.theme,
                   toggleTheme: widget.toggleTheme,
                   lightThemeColor: widget.lightThemeColor
               ),
@@ -117,7 +122,6 @@ class _SignUpState extends State<SignUp> {
   @override
   void initState() {
     _passwordVisible = false;
-    print(widget.theme);
     super.initState();
     if (mounted) {
       Future.delayed(Duration(milliseconds: 1000), () {
@@ -133,11 +137,16 @@ class _SignUpState extends State<SignUp> {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.keyboard_arrow_left, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         centerTitle: true,
         title: Text(
             "ConnectMe",
             style: TextStyle(
               fontSize: 25,
+              fontWeight: FontWeight.w300
             )
         ),
         actions: [
@@ -148,7 +157,7 @@ class _SignUpState extends State<SignUp> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Icon(
-                  widget.theme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
+                  Constants.currentTheme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
               ),
             ),
           )
@@ -158,7 +167,7 @@ class _SignUpState extends State<SignUp> {
           child: Center(
             child: JumpingDotsProgressIndicator(
               fontSize: 55.0,
-              color: widget.theme == 'dark' ? Colors.white : Colors.green,
+              color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
             ),
           )
       ) :  Container(
@@ -185,15 +194,15 @@ class _SignUpState extends State<SignUp> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
                           controller: userNameEditingController,
                           validator: (value) {
-                            return value.length < 5
-                                ? "Enter Username of 5+ characters"
+                            return value.length < 6
+                                ? "Enter Username of 6+ characters"
                                 : null;
                           },
                           decoration: InputDecoration(
                             labelText: "Username",
                             hintText: "Enter Username",
                             hintStyle: TextStyle(
-                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(32.0),
@@ -217,7 +226,7 @@ class _SignUpState extends State<SignUp> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
                           controller: emailEditingController,
                           validator: (value) {
-                            if (emailEditingController.text.isEmpty) return "Enter Email";
+                            if (emailEditingController.text.isEmpty) return "Email Cannot be Empty";
                             return RegExp(
                                 r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
                                 .hasMatch(emailEditingController.text) ? null : "Invalid Email";
@@ -226,7 +235,7 @@ class _SignUpState extends State<SignUp> {
                             labelText: "Email Address",
                             hintText: "Enter your Email Address",
                             hintStyle: TextStyle(
-                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(32.0),
@@ -247,36 +256,38 @@ class _SignUpState extends State<SignUp> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        IntlPhoneField(
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w300
-                          ),
-                          controller: phoneNumberEditingController,
-                          decoration: InputDecoration(
-                            labelText: 'Phone Number',
-                            hintText: "Enter your Number",
-                            hintStyle: TextStyle(
-                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                        Container(
+                          child: IntlPhoneField(
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w300
                             ),
-                            focusColor: widget.lightThemeColor,
-                            border: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: new BorderSide(
-                                color: Colors.grey,
-                                width: 1,
+                            controller: phoneNumberEditingController,
+                            decoration: InputDecoration(
+                              labelText: 'Phone Number',
+                              hintText: "Enter your Number",
+                              hintStyle: TextStyle(
+                                  color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
+                              ),
+                              focusColor: widget.lightThemeColor,
+                              border: OutlineInputBorder(
+                                borderRadius: new BorderRadius.circular(32.0),
+                                borderSide: new BorderSide(
+                                  color: Colors.grey,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: new BorderRadius.circular(32.0),
+                                borderSide: BorderSide(
+                                  color: widget.lightThemeColor,
+                                  style: BorderStyle.solid,
+                                  width: 3,
+                                ),
                               ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: BorderSide(
-                                color: widget.lightThemeColor,
-                                style: BorderStyle.solid,
-                                width: 3,
-                              ),
-                            ),
+                            initialCountryCode: 'IN',
                           ),
-                          initialCountryCode: 'IN',
                         ),
                         SizedBox(height: 7,),
                         TextFormField(
@@ -292,7 +303,7 @@ class _SignUpState extends State<SignUp> {
                             labelText: "Password",
                             hintText: "Enter your Password",
                             hintStyle: TextStyle(
-                                color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                             ),
                             border: new OutlineInputBorder(
                               borderRadius: new BorderRadius.circular(32.0),
@@ -346,7 +357,7 @@ class _SignUpState extends State<SignUp> {
                                   Colors.white,
                                   Colors.white
                                 ]),
-                                boxShadow: widget.theme == 'light' ? [BoxShadow(spreadRadius: 0.3)]: null
+                                boxShadow: Constants.currentTheme == 'light' ? [BoxShadow(spreadRadius: 0.3)]: null
                             ),
                             child: Container(
                               padding: EdgeInsets.symmetric(horizontal: 20,),
@@ -389,12 +400,12 @@ class _SignUpState extends State<SignUp> {
                     )
                 ),
                 SizedBox(height: 20),
-                widget.theme == 'dark' ? Text(
-                    "Made with Love in India",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w100
-                  ),
-                ) :
+                    Constants.currentTheme == 'dark' ? Text(
+                      "Made with Love in India",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w100
+                    ),
+                  ) :
                 Text(
                     "Made with Love in India",
                     style: TextStyle(

@@ -15,6 +15,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
 
   bool userSignedIn = false;
+
   @override
   void initState() {
     getUserInfo();
@@ -30,8 +31,6 @@ class _SplashScreenState extends State<SplashScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var email = prefs.getString('email');
     var name = prefs.getString('name');
-    print("Logged in email:" + email.toString());
-    print("Logged in name:" + name.toString());
 
     setState(() {
       Constants.userName = name;
@@ -42,9 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
     await HelperFunctions().getUserLoggedInSharedPreference().then((value) {
       isLoggedIn = value;
     }).catchError((e) {print(e.message);});
-    print("Login Status is: $email $isLoggedIn");
     userSignedIn = email != null && isLoggedIn != null;
-    print("user signed in: $userSignedIn");
   }
 
   @override

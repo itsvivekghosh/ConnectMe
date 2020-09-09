@@ -1,14 +1,14 @@
+import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/services/auth.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ForgotPassword extends StatefulWidget {
-  final String theme;
   final Function toggleState, toggleTheme;
   final bool signUpState;
   final Color lightThemeColor;
-  ForgotPassword({this.theme, this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
+  ForgotPassword({this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
 
   @override
   _ForgotPasswordState createState() => _ForgotPasswordState();
@@ -69,7 +69,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     Navigator.pop(context);
                     Navigator.pushReplacement(context, MaterialPageRoute(
                         builder: (context) => HomePage(
-                            theme: widget.theme,
                             toggleTheme: widget.toggleTheme,
                             lightThemeColor: widget.lightThemeColor
                         )
@@ -131,7 +130,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       style: TextStyle(
                         fontSize: 25,
                         fontWeight: FontWeight.w300,
-                        color: widget.theme == 'light' ? Colors.black : Colors.white24
+                        color: Constants.currentTheme == 'light' ? Colors.black : Colors.white24
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -146,7 +145,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w300,
-                          color: widget.theme == "dark" ? Colors.white : Colors.black,
+                          color: Constants.currentTheme == "dark" ? Colors.white : Colors.black,
                           decoration: TextDecoration.none
                       ),
                       validator: (value) {

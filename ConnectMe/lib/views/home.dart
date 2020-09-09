@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 class HomePage extends StatefulWidget {
 
   final Function toggleTheme;
-  final String theme;
   final Color lightThemeColor;
-  HomePage({this.toggleTheme, this.theme, this.lightThemeColor});
+  HomePage({this.toggleTheme, this.lightThemeColor});
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -18,7 +17,6 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Container(
       child: SelectionScreen(
-          theme: widget.theme,
           toggleTheme: widget.toggleTheme,
           lightThemeColor: widget.lightThemeColor
         ),

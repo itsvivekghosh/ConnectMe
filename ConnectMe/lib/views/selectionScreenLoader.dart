@@ -1,6 +1,8 @@
-import 'package:ConnectMe/views/chatRoomDashboard.dart';
-import 'package:ConnectMe/views/home.dart';
 import 'package:flutter/material.dart';
+import 'package:ConnectMe/views/home.dart';
+import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/views/chatRoomDashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SelectionScreenLoader extends StatefulWidget {
 
@@ -12,16 +14,13 @@ class SelectionScreenLoader extends StatefulWidget {
 }
 
 class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
-
-  String theme = 'dark';
   Color lightThemeColor = Colors.green;
 
-  toggleTheme() {
-    print("Toggling Theme");
+  toggleTheme() async {
     setState(() {
-      if (theme == 'light')
-        theme = 'dark';
-      else theme = 'light';
+      if (Constants.currentTheme == 'light')
+        Constants.currentTheme = 'dark';
+      else Constants.currentTheme = 'light';
     });
   }
 
@@ -34,7 +33,7 @@ class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ConnectMe',
-      theme: theme == 'dark' ? ThemeData.dark()
+      theme: Constants.currentTheme == 'dark' ? ThemeData.dark()
           : ThemeData(
         cursorColor: lightThemeColor,
         primaryColor: lightThemeColor,
@@ -45,12 +44,10 @@ class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
       home: widget.userLoggedIn ?
         ChatRoom(
             toggleTheme: toggleTheme,
-            theme: theme,
             lightThemeColor: lightThemeColor
           ) :
         HomePage(
           toggleTheme: toggleTheme,
-          theme: theme,
           lightThemeColor: lightThemeColor
       ),
     );

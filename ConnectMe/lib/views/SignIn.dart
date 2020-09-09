@@ -16,11 +16,10 @@ import 'package:progress_indicators/progress_indicators.dart';
 
 
 class SignIn extends StatefulWidget {
-  final String theme;
   final Function toggleState, toggleTheme;
   final bool signUpState;
   final Color lightThemeColor;
-  SignIn({this.theme, this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
+  SignIn({this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
 
   @override
   _SignInState createState() => _SignInState();
@@ -34,12 +33,13 @@ class _SignInState extends State<SignIn> {
   bool isPasswordWrong = false;
   bool _passwordVisible = false;
   String currentLoginUser;
-  String wrongEmailMessage = '';
-  String wrongPasswordMessage = '';
-  String emailErrorText = '';
-  String passwordErrorText = '';
+  String wrongEmailMessage;
+  String wrongPasswordMessage;
+  String emailErrorText;
+  String passwordErrorText;
 
   GoogleSignIn googleAuth = new GoogleSignIn();
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController emailTextEditingController = new TextEditingController();
   TextEditingController passwordTextEditingController = new TextEditingController();
 
@@ -107,7 +107,6 @@ class _SignInState extends State<SignIn> {
         context,
         CupertinoPageRoute(
           builder: (context) => ChatRoom(
-              theme: widget.theme,
               toggleTheme: widget.toggleTheme,
               lightThemeColor: widget.lightThemeColor,
               isGoogleSignIn: true
@@ -120,10 +119,11 @@ class _SignInState extends State<SignIn> {
   }
 
   signIn() async {
+    showLoadingDialog('Logging In', context, _keyLoader);
     if (formKey.currentState.validate()) {
-      setState(() {
-        isLoading = true;
-      });
+      // setState(() {
+      //   isLoading = true;
+      // });
 
       await authService
           .signInWithEmailAndPassword(
@@ -157,12 +157,12 @@ class _SignInState extends State<SignIn> {
           Constants.userName = name;
           Constants.userEmail = emailTextEditingController.text;
 
+          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
             CupertinoPageRoute(
               builder: (context) => ChatRoom(
-                  theme: widget.theme,
                   toggleTheme: widget.toggleTheme,
                   lightThemeColor: widget.lightThemeColor,
                   isGoogleSignIn: false
@@ -170,9 +170,9 @@ class _SignInState extends State<SignIn> {
             ),
           );
         } else {
-          setState(() {
-            isLoading = false;
-          });
+          // setState(() {
+          //   isLoading = false;
+          // });
         }
       });
     }
@@ -183,7 +183,6 @@ class _SignInState extends State<SignIn> {
       CupertinoPageRoute(
         builder: (context) {
             return ForgotPassword(
-              theme: widget.theme,
               lightThemeColor: widget.lightThemeColor,
               toggleTheme: widget.toggleTheme,
             );
@@ -193,7 +192,6 @@ class _SignInState extends State<SignIn> {
   }
 
   void validateAndSignMeIn() async {
-    print("Signing In...");
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     try {
@@ -205,7 +203,7 @@ class _SignInState extends State<SignIn> {
           );
         }
       } catch(e) {
-        print("exception caught: 'EMAIL OR PASSWORD CANNOT BE NULL'");
+        print("Exception caught: 'EMAIL OR PASSWORD CANNOT BE NULL'");
         setState(() {
           isEmailWrong = true;
           isPasswordWrong = true;
@@ -221,13 +219,18 @@ class _SignInState extends State<SignIn> {
         isEmailWrong = false;
         isPasswordWrong = false;
       });
+      showLoadingDialog('Validating', context, _keyLoader);
+
       final checkUser = await _auth.signInWithEmailAndPassword(
-          email: emailTextEditingController.text, password: passwordTextEditingController.text);
+            email: emailTextEditingController.text,
+            password: passwordTextEditingController.text);
+      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       if (checkUser != null) {
         await signIn();
       }
     } catch(e) {
       print("Error while Signing In is: ${e.toString()}");
+      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       if (e is PlatformException && e.code == 'ERROR_USER_NOT_FOUND') {
         setState(() {
           isEmailWrong = true;
@@ -276,10 +279,15 @@ class _SignInState extends State<SignIn> {
       resizeToAvoidBottomPadding: false,
       appBar: AppBar(
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.keyboard_arrow_left, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
             "ConnectMe",
             style: TextStyle(
               fontSize: 25,
+              fontWeight: FontWeight.w300
             )
         ),
         actions: [
@@ -290,17 +298,17 @@ class _SignInState extends State<SignIn> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Icon(
-                  widget.theme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
+                  Constants.currentTheme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
               ),
             ),
           )
         ],
       ),
-      body: isLoading || _loading ?
+      body: _loading ?
       Center(
         child: JumpingDotsProgressIndicator(
           fontSize: 55.0,
-          color: widget.theme == 'dark' ? Colors.white : Colors.green,
+          color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
         ),
       ) :
       Container(
@@ -328,7 +336,7 @@ class _SignInState extends State<SignIn> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w300,
-                          color: widget.theme == "dark" ? Colors.white : Colors.black,
+                          color: Constants.currentTheme == "dark" ? Colors.white : Colors.black,
                           decoration: TextDecoration.none
                       ),
                       keyboardType: TextInputType.emailAddress,
@@ -337,7 +345,7 @@ class _SignInState extends State<SignIn> {
                           labelText: "Enter Your Email",
                           hintText: "Enter your Registered Email ID",
                           hintStyle: TextStyle(
-                            color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                            color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                           ),
                           border: new OutlineInputBorder(
                           borderRadius: new BorderRadius.circular(32.0),
@@ -362,7 +370,7 @@ class _SignInState extends State<SignIn> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w300,
-                          color: widget.theme == "dark" ? Colors.white : Colors.black,
+                          color: Constants.currentTheme == "dark" ? Colors.white : Colors.black,
                           decoration: TextDecoration.none
                       ),
                       controller: passwordTextEditingController,
@@ -372,7 +380,7 @@ class _SignInState extends State<SignIn> {
                           labelText: "Enter Password",
                           hintText: "Enter your Password",
                           hintStyle: TextStyle(
-                              color: widget.theme == 'dark' ? Colors.white24 : Colors.black38
+                              color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                           ),
                           labelStyle: TextStyle(
                             decorationColor: widget.lightThemeColor,
@@ -448,7 +456,7 @@ class _SignInState extends State<SignIn> {
                         }
                       },
                       child: Container(
-                        child: widget.theme == 'dark' ?
+                        child: Constants.currentTheme == 'dark' ?
                           customButtonGoogleDark(context, "Sign In with Google", 18, Colors.white) :
                           customButtonGoogleLight(context, "Sign In with Google", 18, Colors.white),
                       ),
@@ -457,17 +465,15 @@ class _SignInState extends State<SignIn> {
                     GestureDetector(
                       onTap: () {
                         print('Sign In With Facebook');
-                        // _loginWithFacebook();
-                        // print(_message);
                       },
                       child: Container(
-                        child: widget.theme == 'dark' ?
+                        child: Constants.currentTheme == 'dark' ?
                           customButtonFacebookDark(context, "Sign In with Facebook", 18, Colors.blue) :
                           customButtonFacebookLight(context, "Sign In with Facebook", 18, Colors.blue),
                       ),
                     ),
                     SizedBox(height: 50),
-                    widget.theme == 'dark' ? Text(
+                      Constants.currentTheme == 'dark' ? Text(
                       "Made with Love in India",
                       style: TextStyle(
                           fontWeight: FontWeight.w100

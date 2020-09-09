@@ -6,12 +6,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ChatRoom extends StatefulWidget {
-  final String theme;
   final Function toggleTheme;
   final Color lightThemeColor;
   final bool isGoogleSignIn;
 
-  ChatRoom({this.theme, this.toggleTheme, this.lightThemeColor, this.isGoogleSignIn});
+  ChatRoom({this.toggleTheme, this.lightThemeColor, this.isGoogleSignIn});
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -55,7 +54,10 @@ class _ChatRoomState extends State<ChatRoom> {
           GestureDetector(
             onTap: () {
               Navigator.push(context, CupertinoPageRoute(
-                  builder: (context) => Profile()
+                  builder: (context) => Profile(
+                      toggleTheme: widget.toggleTheme,
+                      lightThemeColor: widget.lightThemeColor
+                  )
               ));
             },
             child: Container(
@@ -69,7 +71,6 @@ class _ChatRoomState extends State<ChatRoom> {
               await authService.signOut();
               Navigator.pushReplacement(context, CupertinoPageRoute(
                   builder: (context) => HomePage(
-                    theme: widget.theme,
                     toggleTheme: widget.toggleTheme,
                     lightThemeColor: widget.lightThemeColor,
                   )
@@ -85,7 +86,7 @@ class _ChatRoomState extends State<ChatRoom> {
       body: Text('Welcome ${Constants.userName}'),
       floatingActionButton: FloatingActionButton(
         child: Icon(
-          Icons.search,
+          Icons.message,
           color: Colors.white,
         ),
         backgroundColor: Colors.green,

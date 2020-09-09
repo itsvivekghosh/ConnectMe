@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Constants {
   static String userName;
   static String userEmail;
   static String phoneNumber;
-  static String currentTheme;
+  static String currentTheme = 'dark';
 }
 
 const kPrimaryColor = Color(0xFFFF7643);

@@ -1,3 +1,4 @@
+import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/views/SignIn.dart';
 import 'package:ConnectMe/views/SignUp.dart';
 import 'package:flutter/cupertino.dart';
@@ -5,10 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 
 class SelectionScreen extends StatefulWidget {
-  final String theme;
   final Function toggleTheme;
   final Color lightThemeColor;
-  SelectionScreen({this.theme, this.toggleTheme, this.lightThemeColor});
+  SelectionScreen({this.toggleTheme, this.lightThemeColor});
 
   @override
   _SelectionScreenState createState() => _SelectionScreenState();
@@ -34,7 +34,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
     Center(
       child: JumpingDotsProgressIndicator(
         fontSize: 40.0,
-        color: widget.theme == 'dark' ? Colors.white : Colors.green,
+        color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
       ),
     ) :
     SingleChildScrollView(
@@ -65,7 +65,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       style: TextStyle(
                         fontSize: 55,
                         fontWeight: FontWeight.w500,
-                        color: widget.theme == 'dark' ? Colors.white70 : Colors.black54,
+                        color: Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black54,
                       ),
                     ),
                   ),
@@ -83,7 +83,6 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       Navigator.push(
                         context,
                         CupertinoPageRoute(builder: (context) => SignUp(
-                            theme: widget.theme,
                             toggleTheme: widget.toggleTheme,
                             lightThemeColor: widget.lightThemeColor,
                           ),
@@ -124,7 +123,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       child:Container(
                         height: 0.5,
                         width: 110.0,
-                        color: widget.theme == 'light' ? Colors.black : Colors.white,
+                        color: Constants.currentTheme == 'light' ? Colors.black : Colors.white,
                       ),
                     ),
                     Text(
@@ -139,7 +138,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       child:Container(
                         height: 0.5,
                         width: 110.0,
-                        color: widget.theme == 'light' ? Colors.black : Colors.white,
+                        color: Constants.currentTheme == 'light' ? Colors.black : Colors.white,
                       ),
                     ),
                   ],
@@ -151,7 +150,6 @@ class _SelectionScreenState extends State<SelectionScreen> {
                   Navigator.push(
                     context,
                       CupertinoPageRoute(builder: (context) => SignIn(
-                        theme: widget.theme,
                         toggleTheme: widget.toggleTheme,
                           lightThemeColor: widget.lightThemeColor
                       ),
@@ -167,7 +165,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       gradient: LinearGradient(colors: [
                         Colors.white, Colors.white
                       ]),
-                      boxShadow: widget.theme == 'light' ? [BoxShadow(spreadRadius: 0.4)] : null,
+                      boxShadow: Constants.currentTheme == 'light' ? [BoxShadow(spreadRadius: 0.4)] : null,
                   ),
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 10),
@@ -191,7 +189,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                     child: Text(
                       "Made with Love in India",
                       style: TextStyle(
-                          fontWeight: widget.theme == 'dark' ? FontWeight.w100 : FontWeight.w300
+                          fontWeight: Constants.currentTheme == 'dark' ? FontWeight.w100 : FontWeight.w300
                       ),
                     ),
                   ),
