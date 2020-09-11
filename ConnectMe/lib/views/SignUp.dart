@@ -26,6 +26,7 @@ class _SignUpState extends State<SignUp> {
   bool _loading = true;
   String currentLoginUser;
   bool _passwordVisible = false;
+  String titleSignUp = "Sign Up";
   final formKey = GlobalKey<FormState>();
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController emailEditingController = new TextEditingController();
@@ -42,6 +43,7 @@ class _SignUpState extends State<SignUp> {
     setState(() {
       isErrorInSignUp = false;
       errorSignUpMessage = null;
+      titleSignUp = "CREATING ACCOUNT...";
     });
 
     if (formKey.currentState.validate()) {
@@ -93,9 +95,15 @@ class _SignUpState extends State<SignUp> {
           }).catchError((onError) {
             print("Error on saving Password Preferences");
           });
+          prefs.setString('profilePhotoUrl', profilePhotoUrl).then((value) {
+            print("saved profilePhotoUrl as $profilePhotoUrl!");
+          }).catchError((onError) {
+            print("Error on saving profilePhotoUrl Preferences");
+          });
 
           Constants.userName = userNameEditingController.text;
           Constants.userEmail = emailEditingController.text;
+          Constants.profilePhotoUrl = profilePhotoUrl;
 
           Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           Navigator.pop(context);
@@ -114,6 +122,7 @@ class _SignUpState extends State<SignUp> {
           setState(() {
             isErrorInSignUp = true;
             errorSignUpMessage = e.message;
+            titleSignUp = "Sign Up";
           });
         });
     }
@@ -122,6 +131,7 @@ class _SignUpState extends State<SignUp> {
   @override
   void initState() {
     _passwordVisible = false;
+    titleSignUp = "Sign Up";
     super.initState();
     if (mounted) {
       Future.delayed(Duration(milliseconds: 1000), () {
@@ -341,7 +351,7 @@ class _SignUpState extends State<SignUp> {
                             checkAndSignMeIn();
                           },
                           child: customButtonDark(
-                              context, "Sign Up", 18, widget.lightThemeColor
+                              context, titleSignUp, 18, widget.lightThemeColor
                           ),
                         ),
                         SizedBox(height: 8),

@@ -1,9 +1,11 @@
-import 'package:ConnectMe/helper/constants.dart';
-import 'package:ConnectMe/services/auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:ConnectMe/views/profile.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:ConnectMe/services/auth.dart';
+import 'package:ConnectMe/helper/constants.dart';
+
 
 class ChatRoom extends StatefulWidget {
   final Function toggleTheme;
@@ -18,83 +20,258 @@ class ChatRoom extends StatefulWidget {
 
 class _ChatRoomState extends State<ChatRoom> {
 
-  AuthService authService = new AuthService();
-  String loggedInUsername;
   String loggedInEmail;
   Choice selectedChoice;
+  String loggedInUsername;
+  bool _isSearching = false;
+  String searchQuery = "Search Query";
+  AuthService authService = new AuthService();
+  TextEditingController searchEditingController;
 
-  _select(Choice choice) {
+  _select(Choice choice) async{
+    final myChoice = choice.title;
     setState(() {
       selectedChoice = choice;
     });
+
+    if (myChoice == 'Profile') {
+      Navigator.push(context, CupertinoPageRoute(
+          builder: (context) => Profile(
+            toggleTheme: widget.toggleTheme,
+            lightThemeColor: widget.lightThemeColor,
+            userName: Constants.userName,
+            phoneNumber: Constants.phoneNumber,
+          ),
+        ),
+      );
+    }
+
+    else if (myChoice == 'Settings') {
+      print("Settings");
+    }
+
+    else if (myChoice == 'New Group') {
+      print("New Group");
+    }
+
+    else if (myChoice == 'Theme') {
+      setState(() {
+        widget.toggleTheme();
+      });
+    }
+
+    else if (myChoice == 'Logout') {
+      await authService.signOut();
+      Navigator.pushReplacement(context, CupertinoPageRoute(
+          builder: (context) => HomePage(
+            toggleTheme: widget.toggleTheme,
+            lightThemeColor: widget.lightThemeColor,
+          ),
+        ),
+      );
+    }
   }
 
   @override
   void initState() {
+    searchEditingController = new TextEditingController();
     super.initState();
+  }
+
+  void _startSearch() {
+    // print("open search box");
+    ModalRoute
+        .of(context)
+        .addLocalHistoryEntry(new LocalHistoryEntry(onRemove: _stopSearching));
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _stopSearching() {
+    _clearSearchQuery();
+
+    setState(() {
+      _isSearching = false;
+    });
+  }
+
+  void _clearSearchQuery() {
+    // print("close search box");
+    setState(() {
+      searchEditingController.clear();
+      updateSearchQuery("Search query");
+    });
+  }
+
+  void updateSearchQuery(String newQuery) {
+    setState(() {
+      searchQuery = newQuery;
+    });
+    // print("search query " + newQuery);
+  }
+
+  Widget _buildSearchField() {
+    return new TextField(
+      controller: searchEditingController,
+      autofocus: true,
+      decoration: InputDecoration(
+        hintText: 'Search Accounts, Messages...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(
+          color: Constants.currentTheme == "dark" ? Colors.white30 : Colors.white70
+        ),
+      ),
+      style: TextStyle(
+          color: Colors.white, fontSize: 16.4
+      ),
+      onChanged: updateSearchQuery,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("${Constants.userName}"),
-        actions: <Widget>[
-          PopupMenuButton<Choice>(
-            onSelected: _select,
-            itemBuilder: (BuildContext context) {
-              return choices.map((Choice choice) {
-                return PopupMenuItem<Choice>(
-                  value: choice,
-                  child: Text(choice.title),
-                );
-              }).toList();
-            },
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, CupertinoPageRoute(
-                  builder: (context) => Profile(
-                      toggleTheme: widget.toggleTheme,
-                      lightThemeColor: widget.lightThemeColor
-                  )
-              ));
-            },
-            child: Container(
-              child: Icon(
-                Icons.account_circle
+    return DefaultTabController(
+      length: tabs.length,
+      child: Builder(builder: (BuildContext context) {
+        final TabController tabController = DefaultTabController.of(context);
+        tabController.addListener(() {
+          if (!tabController.indexIsChanging) {
+            // Your code goes here.
+            // To get index of current tab use tabController.index
+            // print(tabController.index);
+          }
+        });
+        return Scaffold(
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(50.0) * 2.37,
+            child: AppBar(
+              leading: _isSearching ? const BackButton() : null,
+              title: _isSearching ? _buildSearchField() : Container(
+                padding: EdgeInsets.only(left: 8, top: 12),
+                child: Text(
+                  "ConnectMe",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 25
+                  ),
+                ),
               ),
+              bottom: TabBar(
+                tabs: tabs,
+                indicatorColor: Colors.green,
+              ),
+              actions: _buildActions(),
+              // actions: <Widget>[
+              //
+              // ],
             ),
           ),
-          GestureDetector(
-            onTap: () async {
-              await authService.signOut();
-              Navigator.pushReplacement(context, CupertinoPageRoute(
-                  builder: (context) => HomePage(
-                    toggleTheme: widget.toggleTheme,
-                    lightThemeColor: widget.lightThemeColor,
-                  )
-              ));
+          body: TabBarView(
+            children: tabs.map((Tab tab) {
+              return Center(
+                child: Text(
+                  tab.text.toLowerCase() + ' Tab ' + Constants.userName.toString(),
+                  style: Theme.of(context).textTheme.headline4,
+                ),
+              );
+            }).toList(),
+          ),
+          floatingActionButton: FloatingActionButton(
+            child: Icon(
+              Icons.message,
+              color: Colors.white,
+            ),
+            backgroundColor: widget.lightThemeColor,
+            onPressed: () {
+              print('Add me');
             },
-            child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.exit_to_app)
-            ),
           ),
-        ],
-      ),
-      body: Text('Welcome ${Constants.userName}'),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(
-          Icons.message,
-          color: Colors.white,
-        ),
-        backgroundColor: Colors.green,
-        onPressed: () {
-          print('add me');
-        },
-      ),
+        );
+      }),
     );
+  }
+
+  List<Widget> _buildActions() {
+    if (_isSearching) {
+      return <Widget>[
+        new GestureDetector(
+          onTap: () {
+            print("Searching... " + searchEditingController.text.toString());
+          },
+          child: Container(
+              padding: EdgeInsets.only(right: 12),
+              child: Icon(Icons.search)
+          ),
+        ),
+        new GestureDetector(
+          onTap: () {
+            if (searchEditingController == null || searchEditingController.text.isEmpty) {
+              Navigator.pop(context);
+              return;
+            }
+            _clearSearchQuery();
+          },
+          child: Container(
+            padding: EdgeInsets.only(right: 18),
+            child: Icon(Icons.clear)
+          ),
+        ),
+      ];
+    }
+
+    return <Widget>[
+      Container(
+        padding: EdgeInsets.only(top: 5),
+        child: new GestureDetector(
+          onTap: () {
+            print("Profile");
+          },
+          child: Container(
+            height: 26, width: 26,
+            child: CircleAvatar(
+              radius: 30,
+              backgroundImage: AssetImage('assets/batman.jpeg'),
+            ),
+          )
+        ),
+      ),
+      Container(
+        padding: EdgeInsets.only(top: 5, left: 8),
+        child: IconButton(
+          icon: Icon(Icons.search),
+          onPressed: () {
+            print("Search");
+            _startSearch();
+          },
+        ),
+      ),
+      Container(
+        padding: EdgeInsets.only(top: 5),
+        child: PopupMenuButton<Choice>(
+          padding: EdgeInsets.only(right: 8),
+          onSelected: _select,
+          elevation: 4,
+          itemBuilder: (BuildContext context) {
+            return choices.map((Choice choice) =>
+              PopupMenuItem<Choice>(
+                value: choice,
+                child: Container(
+                  margin: EdgeInsets.only(right: 50),
+                  child: Text(
+                    choice.title,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400
+                    ),
+                  ),
+                ),
+              )
+            ).toList();
+          },
+        ),
+      ),
+    ];
   }
 }
 
@@ -105,33 +282,15 @@ class Choice {
 }
 
 const List<Choice> choices = const <Choice>[
-  const Choice(title: 'Profile', icon: Icons.directions_car),
-  const Choice(title: 'Bicycle', icon: Icons.directions_bike),
-  const Choice(title: 'Boat', icon: Icons.directions_boat),
-  const Choice(title: 'Bus', icon: Icons.directions_bus),
-  const Choice(title: 'Train', icon: Icons.directions_railway),
-  const Choice(title: 'Walk', icon: Icons.directions_walk),
+  const Choice(title: 'New Group', icon: Icons.group),
+  const Choice(title: 'Profile', icon: Icons.person),
+  const Choice(title: 'Settings', icon: Icons.settings),
+  const Choice(title: 'Theme', icon: Icons.brightness_4),
+  const Choice(title: 'Logout', icon: Icons.exit_to_app_rounded),
 ];
 
-class ChoiceCard extends StatelessWidget {
-  const ChoiceCard({Key key, this.choice}) : super(key: key);
-  final Choice choice;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextStyle textStyle = Theme.of(context).textTheme.headline4;
-    return Card(
-      color: Colors.white,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Icon(choice.icon, size: 128.0, color: textStyle.color),
-            Text(choice.title, style: textStyle),
-          ],
-        ),
-      ),
-    );
-  }
-}
+final List<Tab> tabs = <Tab>[
+  Tab(text: 'Chats'.toUpperCase()),
+  Tab(text: 'Status'.toUpperCase()),
+  Tab(text: 'Groups'.toUpperCase()),
+];

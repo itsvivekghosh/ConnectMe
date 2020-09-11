@@ -37,6 +37,7 @@ class _SignInState extends State<SignIn> {
   String wrongPasswordMessage;
   String emailErrorText;
   String passwordErrorText;
+  String titleSignIn = "Sign In";
 
   GoogleSignIn googleAuth = new GoogleSignIn();
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
@@ -53,6 +54,7 @@ class _SignInState extends State<SignIn> {
     _passwordVisible = false;
     isPasswordWrong = false;
     isEmailWrong = false;
+    titleSignIn = "Sign In";
     super.initState();
     if (mounted) {
       Future.delayed(Duration(milliseconds: 1000), () {
@@ -79,6 +81,7 @@ class _SignInState extends State<SignIn> {
       );
       final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
       HelperFunctions.saveUserLoggedInSharedPreference(true);
+      AuthService().updateGoogleUserData(user);
 
       // saving logged in State in local drive
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -119,11 +122,11 @@ class _SignInState extends State<SignIn> {
   }
 
   signIn() async {
-    showLoadingDialog('Logging In', context, _keyLoader);
+    // showLoadingDialog('Logging In', context, _keyLoader);
     if (formKey.currentState.validate()) {
-      // setState(() {
-      //   isLoading = true;
-      // });
+      setState(() {
+        titleSignIn = "SIGNING IN...";
+      });
 
       await authService
           .signInWithEmailAndPassword(
@@ -154,10 +157,16 @@ class _SignInState extends State<SignIn> {
               .catchError((onError) {
                 print("Error on saving name Preferences");
               });
+          prefs.setString('profilePhotoUrl', userInfoSnapshot.documents[0].data["profileImage"]).then((value) {
+            print("saved profilePhotoUrl as ${userInfoSnapshot.documents[0].data["profileImage"]}!");
+          }).catchError((onError) {
+            print("Error on saving profilePhotoUrl Preferences");
+          });
           Constants.userName = name;
           Constants.userEmail = emailTextEditingController.text;
+          Constants.profilePhotoUrl = userInfoSnapshot.documents[0].data["profileImage"];
 
-          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+          // Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
@@ -170,10 +179,12 @@ class _SignInState extends State<SignIn> {
             ),
           );
         } else {
-          // setState(() {
-          //   isLoading = false;
-          // });
+          print("error");
         }
+      }).catchError((e) {
+        setState(() {
+          titleSignIn = "Sign In";
+        });
       });
     }
   }
@@ -219,18 +230,15 @@ class _SignInState extends State<SignIn> {
         isEmailWrong = false;
         isPasswordWrong = false;
       });
-      showLoadingDialog('Validating', context, _keyLoader);
 
       final checkUser = await _auth.signInWithEmailAndPassword(
             email: emailTextEditingController.text,
             password: passwordTextEditingController.text);
-      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       if (checkUser != null) {
         await signIn();
       }
     } catch(e) {
       print("Error while Signing In is: ${e.toString()}");
-      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
       if (e is PlatformException && e.code == 'ERROR_USER_NOT_FOUND') {
         setState(() {
           isEmailWrong = true;
@@ -442,7 +450,7 @@ class _SignInState extends State<SignIn> {
                         validateAndSignMeIn();
                       },
                       child: customButtonDark(
-                          context, "Sign In", 18, widget.lightThemeColor
+                          context, titleSignIn, 18, widget.lightThemeColor
                       ),
                     ),
                     SizedBox(height: 10),

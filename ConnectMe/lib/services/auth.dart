@@ -2,6 +2,7 @@ import 'package:ConnectMe/models/Person.dart';
 import 'package:ConnectMe/services/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
@@ -109,6 +110,29 @@ class AuthService {
       print("Signed in as: ${user.displayName}");
     } catch(e) {
         print("error while sign in: $e");
+    }
+  }
+
+  void updateGoogleUserData(FirebaseUser user) async {
+    print(user.uid);
+    final QuerySnapshot result = await Firestore.instance
+        .collection('users')
+        .where('uid', isEqualTo: user.uid)
+        .limit(1)
+        .getDocuments()
+    .catchError((e) => print('Error: $e'));
+    final List<DocumentSnapshot> documents = result.documents;
+
+    if (documents.length == 0) {
+      DocumentReference _documentReference = Firestore.instance.collection(
+          'users').document(user.uid);
+
+      return _documentReference.setData({
+        'uid': user.uid,
+        'email': user.email,
+        'profileImage': user.photoUrl,
+        'name': user.displayName,
+      }, merge: true);
     }
   }
 

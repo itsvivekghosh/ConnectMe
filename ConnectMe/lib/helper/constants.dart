@@ -5,9 +5,11 @@ class Constants {
   static String userName;
   static String userEmail;
   static String phoneNumber;
+  static String profilePhotoUrl;
   static String currentTheme = 'dark';
 }
 
+const profilePhotoUrl = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';
 const kPrimaryColor = Color(0xFFFF7643);
 const kPrimaryLightColor = Color(0xFFFFECDF);
 

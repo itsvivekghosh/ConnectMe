@@ -22,7 +22,8 @@ class Profile extends StatefulWidget {
 
   final Color lightThemeColor;
   final Function toggleTheme;
-  Profile({this.toggleTheme, this.lightThemeColor});
+  final String userName, phoneNumber;
+  Profile({this.toggleTheme, this.lightThemeColor, this.userName, this.phoneNumber});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -149,12 +150,21 @@ class _ProfileState extends State<Profile> {
   _cropImage(filePath) async {
     File croppedImage = await ImageCropper.cropImage(
       sourcePath: filePath,
-      maxWidth: 1024,
-      maxHeight: 720,
+      maxWidth: 500,
+      maxHeight: 500,
+      compressQuality: 60,
+      androidUiSettings: AndroidUiSettings(
+        toolbarColor: Colors.green,
+        toolbarTitle: "Crop Profile Image",
+        toolbarWidgetColor: Colors.white,
+        backgroundColor: Colors.black,
+        statusBarColor: Colors.green,
+      ),
     );
     if (croppedImage != null) {
-      _image = croppedImage;
-      setState(() {});
+      setState(() {
+        _image = croppedImage;
+      });
     }
   }
 
@@ -162,29 +172,58 @@ class _ProfileState extends State<Profile> {
   Future getImageFromGallery() async {
     var image = await ImagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 50,
-        maxHeight: 150, maxWidth: 150
     );
-
-    setState(() {
-      _image = image;
-    });
-
-    // _cropImage(image.path);
+    if (image != null) {
+      _cropImage(image.path);
+    }
   }
 
   Future getImageFromCamera() async {
     var image = await ImagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 50,
-        maxHeight: 150, maxWidth: 150
     );
 
-    setState(() {
-      _image = image;
-    });
+    if (image != null) {
+      _cropImage(image.path);
+    }
+  }
 
-    // _cropImage(image.path);
+  removeProfilePhoto() async {
+    print("Removing Profile Photo");
+    FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
+    var defaultImagePath = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';
+
+    Map<String, String> userUpdateMap = {
+      'profileImage': defaultImagePath,
+    };
+    await Firestore.instance
+        .collection('users')
+        .document(_firebaseUser.uid)
+        .updateData(userUpdateMap).catchError((e) => print(e.message));
+
+    setState(() {
+      profileImage = defaultImagePath;
+      image = Container(
+        decoration: BoxDecoration(
+            color: Constants.currentTheme == 'dark' ? Colors.black38 : Colors.white
+        ),
+        child: CachedNetworkImage(
+          imageUrl: profileImage,
+          placeholder: (context, url) =>
+              Center(
+                child: CircularProgressIndicator(
+                  valueColor: new AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+              ),
+          imageBuilder: (context, image) => CircleAvatar(
+            backgroundImage: image,
+            radius: 70,
+          ),
+          height: 150,
+          width: 150,
+        ),
+      );
+    });
   }
 
   _modalBottomSheetMenu(context){
@@ -224,29 +263,35 @@ class _ProfileState extends State<Profile> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Column(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(30)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        removeProfilePhoto();
+                      },
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(30)
+                            ),
+                            child: Icon(
+                              Icons.delete,
+                              size: 30,
+                              color: Colors.white
+                            ),
                           ),
-                          child: Icon(
-                            Icons.delete,
-                            size: 30,
-                            color: Colors.white
+                          SizedBox(height: 5),
+                          Text(
+                              "Remove",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                            "Remove",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     SizedBox(width: 15),
                     GestureDetector(
