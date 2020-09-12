@@ -1,3 +1,4 @@
+import 'package:ConnectMe/views/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -8,11 +9,11 @@ import 'package:ConnectMe/helper/constants.dart';
 
 
 class ChatRoom extends StatefulWidget {
-  final Function toggleTheme;
+  final Function toggleTheme, toggleAccentColor;
   final Color lightThemeColor;
   final bool isGoogleSignIn;
 
-  ChatRoom({this.toggleTheme, this.lightThemeColor, this.isGoogleSignIn});
+  ChatRoom({this.toggleTheme, this.lightThemeColor, this.isGoogleSignIn, this.toggleAccentColor});
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -27,6 +28,8 @@ class _ChatRoomState extends State<ChatRoom> {
   String searchQuery = "Search Query";
   AuthService authService = new AuthService();
   TextEditingController searchEditingController;
+  String darkThemeAssetPath = 'assets/theme/default_dark.jpg';
+  String lightThemeAssetPath = 'assets/theme/default_light.jpg';
 
   _select(Choice choice) async{
     final myChoice = choice.title;
@@ -38,6 +41,7 @@ class _ChatRoomState extends State<ChatRoom> {
       Navigator.push(context, CupertinoPageRoute(
           builder: (context) => Profile(
             toggleTheme: widget.toggleTheme,
+            toggleAccentColor: widget.toggleAccentColor,
             lightThemeColor: widget.lightThemeColor,
             userName: Constants.userName,
             phoneNumber: Constants.phoneNumber,
@@ -47,7 +51,15 @@ class _ChatRoomState extends State<ChatRoom> {
     }
 
     else if (myChoice == 'Settings') {
-      print("Settings");
+      Navigator.push(context, CupertinoPageRoute(
+        builder: (context) => SettingsPage(
+            toggleTheme: widget.toggleTheme,
+            lightThemeColor: widget.lightThemeColor,
+            userName: Constants.userName,
+            toggleAccentColor: widget.toggleAccentColor,
+          ),
+        ),
+      );
     }
 
     else if (myChoice == 'New Group') {
@@ -66,6 +78,7 @@ class _ChatRoomState extends State<ChatRoom> {
           builder: (context) => HomePage(
             toggleTheme: widget.toggleTheme,
             lightThemeColor: widget.lightThemeColor,
+            toggleAccentColor: widget.toggleAccentColor
           ),
         ),
       );
@@ -146,6 +159,7 @@ class _ChatRoomState extends State<ChatRoom> {
           appBar: PreferredSize(
             preferredSize: Size.fromHeight(50.0) * 2.37,
             child: AppBar(
+              backgroundColor: Constants.currentTheme != 'dark' ? Constants.accentColor : null,
               leading: _isSearching ? const BackButton() : null,
               title: _isSearching ? _buildSearchField() : Container(
                 padding: EdgeInsets.only(left: 8, top: 12),
@@ -159,7 +173,7 @@ class _ChatRoomState extends State<ChatRoom> {
               ),
               bottom: TabBar(
                 tabs: tabs,
-                indicatorColor: Colors.green,
+                indicatorColor: Constants.currentTheme == 'dark' ? Constants.accentColor : Colors.white,
               ),
               actions: _buildActions(),
               // actions: <Widget>[
@@ -182,7 +196,7 @@ class _ChatRoomState extends State<ChatRoom> {
               Icons.message,
               color: Colors.white,
             ),
-            backgroundColor: widget.lightThemeColor,
+            backgroundColor: Constants.accentColor,
             onPressed: () {
               print('Add me');
             },
@@ -261,8 +275,8 @@ class _ChatRoomState extends State<ChatRoom> {
                   child: Text(
                     choice.title,
                     style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400
                     ),
                   ),
                 ),

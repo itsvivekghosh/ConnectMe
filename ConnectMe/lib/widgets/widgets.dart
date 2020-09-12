@@ -128,7 +128,7 @@ Widget customButtonFacebookDark(dynamic context, String text, double fontSize, C
             ),
           ),
         ],
-      )
+      ),
   );
 }
 
@@ -192,12 +192,12 @@ Widget customButtonFacebookLight(dynamic context, String text, double fontSize, 
           SizedBox(width: 8,),
           Container(
             child: Text(
-                text,
-                style: TextStyle(
-                    color: color == Colors.white ? Colors.black: Colors.white,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold
-                )
+              text,
+              style: TextStyle(
+                color: color == Colors.white ? Colors.black: Colors.white,
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold
+              ),
             ),
           ),
         ],
@@ -211,31 +211,31 @@ Future<void> showLoadingDialog(var message, BuildContext context, GlobalKey key)
       barrierDismissible: false,
       builder: (BuildContext context) {
         return new WillPopScope(
-            onWillPop: () async => false,
-            child: SimpleDialog(
-                key: key,
-                backgroundColor: Colors.white,
-                children: <Widget>[
-                  Center(
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          JumpingDotsProgressIndicator(
-                            color: Colors.green,
-                            fontSize: 40,
-                        ),
-                        SizedBox(width: 25),
-                        Text(
-                          message,
-                          style: TextStyle(
-                              color: Colors.black
-                          ),
-                        )
-                      ],
+          onWillPop: () async => false,
+          child: SimpleDialog(
+            key: key,
+            backgroundColor: Colors.white,
+            children: <Widget>[
+              Center(
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      JumpingDotsProgressIndicator(
+                        color: Constants.accentColor,
+                        fontSize: 40,
                     ),
-                  )
-                ]
-            )
+                    SizedBox(width: 25),
+                    Text(
+                      message,
+                      style: TextStyle(
+                        color: Colors.black
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       }
     );

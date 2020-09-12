@@ -13,9 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class SignUp extends StatefulWidget {
-  final Function toggleTheme;
+  final Function toggleTheme, toggleAccentColor;
   final Color lightThemeColor;
-  SignUp({this.toggleTheme, this.lightThemeColor});
+  SignUp({this.toggleTheme, this.lightThemeColor, this.toggleAccentColor});
 
   @override
   _SignUpState createState() => _SignUpState();
@@ -112,7 +112,8 @@ class _SignUpState extends State<SignUp> {
             CupertinoPageRoute(
               builder: (context) => ChatRoom(
                   toggleTheme: widget.toggleTheme,
-                  lightThemeColor: widget.lightThemeColor
+                  lightThemeColor: widget.lightThemeColor,
+                  toggleAccentColor: widget.toggleAccentColor,
               ),
             ),
           );
@@ -167,7 +168,7 @@ class _SignUpState extends State<SignUp> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Icon(
-                  Constants.currentTheme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
+                  Constants.currentTheme == 'dark' ? Icons.wb_sunny_rounded : Icons.brightness_3
               ),
             ),
           )
@@ -176,8 +177,8 @@ class _SignUpState extends State<SignUp> {
       body: _loading ? Container(
           child: Center(
             child: JumpingDotsProgressIndicator(
-              fontSize: 55.0,
-              color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
+              fontSize: 40.0,
+              color: Constants.currentTheme == 'dark' ? Colors.white : widget.lightThemeColor,
             ),
           )
       ) :  Container(

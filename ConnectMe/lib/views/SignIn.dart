@@ -16,10 +16,10 @@ import 'package:progress_indicators/progress_indicators.dart';
 
 
 class SignIn extends StatefulWidget {
-  final Function toggleState, toggleTheme;
+  final Function toggleState, toggleTheme, toggleAccentColor;
   final bool signUpState;
   final Color lightThemeColor;
-  SignIn({this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
+  SignIn({this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor, this.toggleAccentColor});
 
   @override
   _SignInState createState() => _SignInState();
@@ -40,7 +40,7 @@ class _SignInState extends State<SignIn> {
   String titleSignIn = "Sign In";
 
   GoogleSignIn googleAuth = new GoogleSignIn();
-  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
+  // final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController emailTextEditingController = new TextEditingController();
   TextEditingController passwordTextEditingController = new TextEditingController();
 
@@ -110,9 +110,10 @@ class _SignInState extends State<SignIn> {
         context,
         CupertinoPageRoute(
           builder: (context) => ChatRoom(
-              toggleTheme: widget.toggleTheme,
-              lightThemeColor: widget.lightThemeColor,
-              isGoogleSignIn: true
+            toggleTheme: widget.toggleTheme,
+            lightThemeColor: widget.lightThemeColor,
+            toggleAccentColor: widget.toggleAccentColor,
+            isGoogleSignIn: true,
           ),
         ),
       );
@@ -124,9 +125,6 @@ class _SignInState extends State<SignIn> {
   signIn() async {
     // showLoadingDialog('Logging In', context, _keyLoader);
     if (formKey.currentState.validate()) {
-      setState(() {
-        titleSignIn = "SIGNING IN...";
-      });
 
       await authService
           .signInWithEmailAndPassword(
@@ -172,9 +170,10 @@ class _SignInState extends State<SignIn> {
             context,
             CupertinoPageRoute(
               builder: (context) => ChatRoom(
-                  toggleTheme: widget.toggleTheme,
-                  lightThemeColor: widget.lightThemeColor,
-                  isGoogleSignIn: false
+                toggleAccentColor: widget.toggleAccentColor,
+                toggleTheme: widget.toggleTheme,
+                lightThemeColor: widget.lightThemeColor,
+                isGoogleSignIn: false
               ),
             ),
           );
@@ -193,10 +192,11 @@ class _SignInState extends State<SignIn> {
     Navigator.push(context,
       CupertinoPageRoute(
         builder: (context) {
-            return ForgotPassword(
-              lightThemeColor: widget.lightThemeColor,
-              toggleTheme: widget.toggleTheme,
-            );
+          return ForgotPassword(
+            lightThemeColor: widget.lightThemeColor,
+            toggleTheme: widget.toggleTheme,
+            toggleAccentColor: widget.toggleAccentColor
+          );
         }
       ),
     );
@@ -206,6 +206,9 @@ class _SignInState extends State<SignIn> {
     final FirebaseAuth _auth = FirebaseAuth.instance;
 
     try {
+      setState(() {
+        titleSignIn = "SIGNING IN...";
+      });
       try {
         if (emailTextEditingController.text.isEmpty || passwordTextEditingController.text.isEmpty) {
           print("Error Signing in");
@@ -216,6 +219,7 @@ class _SignInState extends State<SignIn> {
       } catch(e) {
         print("Exception caught: 'EMAIL OR PASSWORD CANNOT BE NULL'");
         setState(() {
+          titleSignIn = "Sign In";
           isEmailWrong = true;
           isPasswordWrong = true;
           if (emailTextEditingController.text.isEmpty)
@@ -239,6 +243,9 @@ class _SignInState extends State<SignIn> {
       }
     } catch(e) {
       print("Error while Signing In is: ${e.toString()}");
+      setState(() {
+        titleSignIn = "Sign In";
+      });
       if (e is PlatformException && e.code == 'ERROR_USER_NOT_FOUND') {
         setState(() {
           isEmailWrong = true;
@@ -306,7 +313,7 @@ class _SignInState extends State<SignIn> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Icon(
-                  Constants.currentTheme != 'dark' ? Icons.brightness_6 : Icons.brightness_5
+                  Constants.currentTheme == 'dark' ? Icons.wb_sunny_rounded : Icons.brightness_3
               ),
             ),
           )
@@ -315,8 +322,8 @@ class _SignInState extends State<SignIn> {
       body: _loading ?
       Center(
         child: JumpingDotsProgressIndicator(
-          fontSize: 55.0,
-          color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
+          fontSize: 40.0,
+          color: Constants.currentTheme == 'dark' ? Colors.white : widget.lightThemeColor,
         ),
       ) :
       Container(
@@ -332,7 +339,7 @@ class _SignInState extends State<SignIn> {
                 child: Text("Hello,", style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 50,
-                  fontFamily: 'RobotoMono' ,
+                  fontFamily: 'RobotoMono',
                 ),
                 )
               ),

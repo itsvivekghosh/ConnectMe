@@ -5,10 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ForgotPassword extends StatefulWidget {
-  final Function toggleState, toggleTheme;
+  final Function toggleState, toggleTheme, toggleAccentColor;
   final bool signUpState;
   final Color lightThemeColor;
-  ForgotPassword({this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
+  ForgotPassword({this.toggleAccentColor, this.toggleState, this.toggleTheme, this.signUpState, this.lightThemeColor});
 
   @override
   _ForgotPasswordState createState() => _ForgotPasswordState();

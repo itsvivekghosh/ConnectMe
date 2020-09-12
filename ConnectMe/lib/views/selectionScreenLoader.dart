@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SelectionScreenLoader extends StatefulWidget {
 
@@ -14,13 +13,20 @@ class SelectionScreenLoader extends StatefulWidget {
 }
 
 class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
-  Color lightThemeColor = Colors.green;
+  Color lightThemeColor = Constants.accentColor;
 
   toggleTheme() async {
     setState(() {
       if (Constants.currentTheme == 'light')
         Constants.currentTheme = 'dark';
       else Constants.currentTheme = 'light';
+    });
+  }
+
+  toggleAccentColor(color) async {
+    setState(() {
+      Constants.accentColor = color;
+      lightThemeColor = color;
     });
   }
 
@@ -44,11 +50,13 @@ class _SelectionScreenLoaderState extends State<SelectionScreenLoader> {
       home: widget.userLoggedIn ?
         ChatRoom(
             toggleTheme: toggleTheme,
+            toggleAccentColor: toggleAccentColor,
             lightThemeColor: lightThemeColor
-          ) :
+        ) :
         HomePage(
           toggleTheme: toggleTheme,
-          lightThemeColor: lightThemeColor
+          lightThemeColor: lightThemeColor,
+          toggleAccentColor: toggleAccentColor,
       ),
     );
   }

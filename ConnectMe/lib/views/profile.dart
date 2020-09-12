@@ -1,14 +1,14 @@
 import 'dart:io';
-import 'package:flutter/rendering.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:path/path.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:ConnectMe/widgets/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:ConnectMe/services/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
@@ -21,9 +21,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 class Profile extends StatefulWidget {
 
   final Color lightThemeColor;
-  final Function toggleTheme;
+  final Function toggleTheme, toggleAccentColor;
   final String userName, phoneNumber;
-  Profile({this.toggleTheme, this.lightThemeColor, this.userName, this.phoneNumber});
+  Profile({this.toggleTheme, this.lightThemeColor, this.userName, this.phoneNumber, this.toggleAccentColor});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -46,14 +46,16 @@ class _ProfileState extends State<Profile> {
 
   @override
   void initState() {
-    getUserData();
-    Future.delayed(Duration(milliseconds: 900), () {
-      setState(() {
-        _loading = false;
-        showBottomSheetMenu = false;
+    if (mounted) {
+      getUserData();
+      Future.delayed(Duration(milliseconds: 900), () {
+        setState(() {
+          _loading = false;
+          showBottomSheetMenu = false;
+        });
       });
-    });
-    super.initState();
+      super.initState();
+    }
   }
 
   Future getUserData() async {
@@ -73,7 +75,7 @@ class _ProfileState extends State<Profile> {
             placeholder: (context, url) =>
                 Center(
                   child: CircularProgressIndicator(
-                    valueColor: new AlwaysStoppedAnimation<Color>(Colors.green),
+                    valueColor: new AlwaysStoppedAnimation<Color>(widget.lightThemeColor),
                   ),
             ),
             imageBuilder: (context, image) => CircleAvatar(
@@ -154,11 +156,11 @@ class _ProfileState extends State<Profile> {
       maxHeight: 500,
       compressQuality: 60,
       androidUiSettings: AndroidUiSettings(
-        toolbarColor: Colors.green,
+        toolbarColor: widget.lightThemeColor,
         toolbarTitle: "Crop Profile Image",
         toolbarWidgetColor: Colors.white,
         backgroundColor: Colors.black,
-        statusBarColor: Colors.green,
+        statusBarColor: widget.lightThemeColor,
       ),
     );
     if (croppedImage != null) {
@@ -212,7 +214,7 @@ class _ProfileState extends State<Profile> {
           placeholder: (context, url) =>
               Center(
                 child: CircularProgressIndicator(
-                  valueColor: new AlwaysStoppedAnimation<Color>(Colors.green),
+                  valueColor: new AlwaysStoppedAnimation<Color>(Constants.accentColor),
                 ),
               ),
           imageBuilder: (context, image) => CircleAvatar(
@@ -284,7 +286,7 @@ class _ProfileState extends State<Profile> {
                           ),
                           SizedBox(height: 5),
                           Text(
-                              "Remove",
+                            "Remove",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13
@@ -387,7 +389,7 @@ class _ProfileState extends State<Profile> {
       Center(
         child: JumpingDotsProgressIndicator(
           fontSize: 55.0,
-          color: Constants.currentTheme == "dark" ? Colors.white : Colors.green,
+          color: Constants.currentTheme == "dark" ? Colors.white : widget.lightThemeColor,
         ),
       ) : SingleChildScrollView(
         child: Container(
@@ -401,7 +403,6 @@ class _ProfileState extends State<Profile> {
                   children: [
                      CircleAvatar(
                       radius: 70,
-                      // backgroundColor: Color(0xff476cfb),
                       child: ClipOval(
                         child: new SizedBox(
                           width: 140.0,
@@ -425,8 +426,8 @@ class _ProfileState extends State<Profile> {
                           // margin: EdgeInsets.symmetric(horizontal: 3, vertical: 3),
                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.green,
-                              borderRadius: BorderRadius.circular(30)
+                            color: widget.lightThemeColor,
+                            borderRadius: BorderRadius.circular(30)
                           ),
                           child: Icon(
                             Icons.camera_alt_rounded,
@@ -474,7 +475,7 @@ class _ProfileState extends State<Profile> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
-                              color: Colors.green,
+                              color: widget.lightThemeColor,
                               style: BorderStyle.solid,
                               width: 3,
                             ),
@@ -497,7 +498,7 @@ class _ProfileState extends State<Profile> {
                           labelStyle: TextStyle(
                             color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
                           ),
-                          focusColor: Colors.green,
+                          focusColor: widget.lightThemeColor,
                           border: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: new BorderSide(
@@ -508,7 +509,7 @@ class _ProfileState extends State<Profile> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
-                              color: Colors.green,
+                              color: widget.lightThemeColor,
                               style: BorderStyle.solid,
                               width: 3,
                             ),
@@ -519,48 +520,30 @@ class _ProfileState extends State<Profile> {
                       SizedBox(height: 30,),
                       GestureDetector(
                         onTap: () async {
-                          print("Update Profile");
                           await _updateProfile(context);
                         },
                         child: customButtonDark(
-                            context, "Update", 18, Colors.green
+                          context, "Update", 18, widget.lightThemeColor
                         ),
                       ),
                       SizedBox(height: 20),
                       GestureDetector(
                         onTap: () {
-                          print("Canceling Update");
                           Navigator.pop(context);
                           Navigator.pushReplacement(
                             context,
                             CupertinoPageRoute(builder: (context) => ChatRoom(
-                              toggleTheme: widget.toggleTheme,
-                              lightThemeColor: widget.lightThemeColor,
-                            ),
+                                toggleTheme: widget.toggleTheme,
+                                lightThemeColor: widget.lightThemeColor,
+                                toggleAccentColor: widget.toggleAccentColor,
+                              ),
                             ),
                           );
                         },
                         child: customButtonDark(
-                            context, "Cancel", 18, Colors.white
+                          context, "Cancel", 18, Colors.white
                         ),
                       ),
-                      // SizedBox(height: 15),
-                      // Container(
-                      //   padding: EdgeInsets.only(right: 10),
-                      //   child: Row(
-                      //     mainAxisAlignment: MainAxisAlignment.end,
-                      //     children: [
-                      //       Text(
-                      //           "Change My Password",
-                      //         style: TextStyle(
-                      //           fontWeight: FontWeight.w400,
-                      //           fontSize: 16,
-                      //         ),
-                      //         textAlign: TextAlign.left,
-                      //       ),
-                      //     ],
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),

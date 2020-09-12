@@ -7,6 +7,7 @@ class Constants {
   static String phoneNumber;
   static String profilePhotoUrl;
   static String currentTheme = 'dark';
+  static Color accentColor = Colors.green;
 }
 
 const profilePhotoUrl = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';

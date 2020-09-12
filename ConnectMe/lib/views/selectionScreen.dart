@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 
 class SelectionScreen extends StatefulWidget {
-  final Function toggleTheme;
+  final Function toggleTheme, toggleAccentColor;
   final Color lightThemeColor;
-  SelectionScreen({this.toggleTheme, this.lightThemeColor});
+  SelectionScreen({this.toggleTheme, this.lightThemeColor, this.toggleAccentColor});
 
   @override
   _SelectionScreenState createState() => _SelectionScreenState();
@@ -85,6 +85,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                         CupertinoPageRoute(builder: (context) => SignUp(
                             toggleTheme: widget.toggleTheme,
                             lightThemeColor: widget.lightThemeColor,
+                            toggleAccentColor: widget.toggleAccentColor
                           ),
                         ),
                       );
@@ -97,18 +98,18 @@ class _SelectionScreenState extends State<SelectionScreen> {
                           borderRadius: BorderRadius.circular(30),
                           gradient: LinearGradient(colors: [
                             widget.lightThemeColor, widget.lightThemeColor
-                          ]),
+                          ]
+                        ),
                       ),
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 10),
-                      child:
-                        Text(
-                          "SIGN UP FOR FREE",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold
-                          ),
+                      child:Text(
+                        "SIGN UP FOR FREE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ),
                   ),
@@ -119,7 +120,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                 child: Row(
                   children: [
                     Padding(
-                      padding:EdgeInsets.symmetric(horizontal:10.0),
+                      padding: EdgeInsets.symmetric(horizontal: 10.0),
                       child:Container(
                         height: 0.5,
                         width: 110.0,
@@ -151,7 +152,8 @@ class _SelectionScreenState extends State<SelectionScreen> {
                     context,
                       CupertinoPageRoute(builder: (context) => SignIn(
                         toggleTheme: widget.toggleTheme,
-                          lightThemeColor: widget.lightThemeColor
+                        lightThemeColor: widget.lightThemeColor,
+                        toggleAccentColor: widget.toggleAccentColor
                       ),
                     ),
                   );
