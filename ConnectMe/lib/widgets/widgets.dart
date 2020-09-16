@@ -240,3 +240,35 @@ Future<void> showLoadingDialog(var message, BuildContext context, GlobalKey key)
       }
     );
 }
+showSnackBarWithMessage(message, subMessage, color) {
+  final snackBar = SnackBar(
+    backgroundColor: color,
+    content: Row(
+      children: [
+        Text(
+          message,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: color == Colors.red || color == Colors.green ? Colors.white : Colors.black,
+          ),
+        ),
+        SizedBox(width: 5),
+        Text(
+          subMessage,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color == Colors.red || color == Colors.green ? Colors.white : Colors.black,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ],
+    ),
+    // action: SnackBarAction(
+    //   label: 'Undo',
+    //   onPressed: () {
+    //     // Some code to undo the change.
+    //   },
+    // ),
+  );
+  return snackBar;
+}

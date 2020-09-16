@@ -14,9 +14,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:progressive_image/progressive_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progress_indicators/progress_indicators.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class Profile extends StatefulWidget {
 
@@ -35,20 +36,24 @@ class _ProfileState extends State<Profile> {
   String phoneNumber;
   Widget image;
   bool _loading = true;
+  String saveImagePath = '';
   bool showBottomSheetMenu = false;
+  Map<String, String> userUpdateMap;
   final formKey = GlobalKey<FormState>();
+  String updateStateButtonTitle = 'Update';
   final fireStoreInstance = Firestore.instance;
-  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   final DatabaseMethods _databaseMethods = new DatabaseMethods();
   TextEditingController userNameController = new TextEditingController();
   TextEditingController phoneNumberController = new TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   String profileImage = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';
 
   @override
   void initState() {
     if (mounted) {
       getUserData();
-      Future.delayed(Duration(milliseconds: 900), () {
+      updateStateButtonTitle = 'Update';
+      Future.delayed(Duration(seconds: 1), () {
         setState(() {
           _loading = false;
           showBottomSheetMenu = false;
@@ -61,35 +66,141 @@ class _ProfileState extends State<Profile> {
   Future getUserData() async {
     var firebaseUser = await FirebaseAuth.instance.currentUser();
     var userData = await _databaseMethods.getUsersByUserEmail(firebaseUser.email);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
 
     setState(() {
       userName = userData.documents[0].data['name'];
       phoneNumber = userData.documents[0].data['phoneNumber'];
       profileImage = userData.documents[0].data['profileImage'];
-      image = Container(
-        decoration: BoxDecoration(
-            color: Constants.currentTheme == 'dark' ? Colors.black38 : Colors.white
-        ),
-        child: CachedNetworkImage(
-            imageUrl: profileImage,
-            placeholder: (context, url) =>
-                Center(
-                  child: CircularProgressIndicator(
-                    valueColor: new AlwaysStoppedAnimation<Color>(widget.lightThemeColor),
-                  ),
-            ),
-            imageBuilder: (context, image) => CircleAvatar(
-              backgroundImage: image,
-              radius: 70,
-            ),
+
+      if (prefs.getString('profileImagePath') == Constants.profilePhotoUrl || prefs.getString('profileImagePath') == '') {
+        image = Container(
+          child: ProgressiveImage(
+            placeholder: AssetImage('assets/default.png'),
+            image: NetworkImage(profileImage),
+            thumbnail: AssetImage('assets/default.png'),
             height: 150,
             width: 150,
+            blur: 2.8,
+            fit: BoxFit.cover,
           ),
         );
+      } else {
+        try {
+          image = Container(
+            child: ProgressiveImage(
+              placeholder: FileImage(File(prefs.getString('profileImagePath'))),
+              image: NetworkImage(profileImage),
+              thumbnail: FileImage(File(prefs.getString('profileImagePath'))),
+              height: 150,
+              width: 150,
+              blur: 2.8,
+              fit: BoxFit.cover,
+            ),
+          );
+        } catch (e) {
+          print("Error Loading Profile Image: $e");
+          image = Container(
+            child: ProgressiveImage(
+              placeholder: NetworkImage(profileImage),
+              image: NetworkImage(profileImage),
+              thumbnail: NetworkImage(profileImage),
+              height: 150,
+              width: 150,
+              blur: 2.9,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+      }
       });
     }
 
+  showAlertDialog(BuildContext context) {
+    // set up the buttons
+    Widget cancelButton = FlatButton(
+      splashColor: Colors.green.shade50,
+      hoverColor: Colors.green.shade50,
+      child: Text(
+        "No",
+        style: TextStyle(
+          fontSize: 18,
+          color: Colors.green,
+        ),
+      ),
+      onPressed:  () {
+        Navigator.of(context, rootNavigator: true).pop();
+      },
+    );
+
+    Widget continueButton = FlatButton(
+      splashColor: Colors.green.shade50,
+      hoverColor: Colors.green.shade50,
+      child: Text(
+        "Yes",
+        style: TextStyle(
+          fontSize: 18,
+          color: Colors.green,
+        ),
+      ),
+      onPressed:  () {
+        removeProfilePhoto(context);
+        Navigator.of(context, rootNavigator: true).pop();
+
+        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => ChatRoom(
+              toggleAccentColor: widget.toggleAccentColor,
+              toggleTheme: widget.toggleTheme,
+              lightThemeColor: widget.lightThemeColor,
+              isGoogleSignIn: false
+            ),
+          ),
+        );
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(
+          "Remove Profile Photo",
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+          )
+      ),
+      content: Text(
+        "Are you sure, you want to remove your profile photo? \n\nAfter this you\'ll be redirected to Home Page!",
+        style: TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+        ),
+      ),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
   Future _updateProfile(context) async {
+    if (_image == null && userNameController.text.isEmpty && phoneNumberController.text.isEmpty) {
+      _scaffoldKey.currentState.showSnackBar(
+          showSnackBarWithMessage("Got Empty Credentials", "Please Try again!", Colors.red)
+      );
+      return;
+    }
+
     FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
     var name, number;
 
@@ -100,12 +211,21 @@ class _ProfileState extends State<Profile> {
       'name': name,
       'phoneNumber': number,
     };
+    setState(() {
+      updateStateButtonTitle = 'UPDATING...';
+    });
 
-    showLoadingDialog('Updating...', context, _keyLoader);
     await Firestore.instance
         .collection('users')
         .document(_firebaseUser.uid)
-        .updateData(userUpdateMap).catchError((e) => print(e.message));
+        .updateData(userUpdateMap).catchError((e) {
+
+        print("Unable to Update data.. $e");
+        setState(() {
+          updateStateButtonTitle = 'Update';
+        });
+      }
+    );
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -136,14 +256,19 @@ class _ProfileState extends State<Profile> {
             .updateData(userUpdateMap).catchError((e) => print(e.message));
       }
     }
+    if (saveImagePath != '') {
+      prefs.setString('profileImagePath', saveImagePath);
+    }
 
-    Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
     Navigator.pop(context);
     Navigator.pushReplacement(
-        context,
-        CupertinoPageRoute(builder: (context) => ChatRoom(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => ChatRoom(
+            toggleAccentColor: widget.toggleAccentColor,
             toggleTheme: widget.toggleTheme,
             lightThemeColor: widget.lightThemeColor,
+            isGoogleSignIn: false
         ),
       ),
     );
@@ -166,17 +291,22 @@ class _ProfileState extends State<Profile> {
     if (croppedImage != null) {
       setState(() {
         _image = croppedImage;
+        saveImagePath = croppedImage.path;
       });
     }
   }
-
 
   Future getImageFromGallery() async {
     var image = await ImagePicker.pickImage(
         source: ImageSource.gallery,
     );
+
     if (image != null) {
-      _cropImage(image.path);
+      Directory appDir = await getApplicationDocumentsDirectory();
+      final File newImage = await image.copy('${appDir.path}/profileImage.jpg');
+      if (newImage != null) {
+        _cropImage(newImage.path);
+      }
     }
   }
 
@@ -186,18 +316,25 @@ class _ProfileState extends State<Profile> {
     );
 
     if (image != null) {
-      _cropImage(image.path);
+      Directory appDir = await getApplicationDocumentsDirectory();
+      final File newImage = await image.copy('${appDir.path}/profileImage.jpg');
+      if (newImage != null) {
+        _cropImage(newImage.path);
+      }
     }
   }
 
-  removeProfilePhoto() async {
-    print("Removing Profile Photo");
+  removeProfilePhoto(context) async {
     FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
-    var defaultImagePath = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';
+    var defaultImagePath = profilePhotoUrl;
 
     Map<String, String> userUpdateMap = {
       'profileImage': defaultImagePath,
     };
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('profileImagePath', '');
+
     await Firestore.instance
         .collection('users')
         .document(_firebaseUser.uid)
@@ -205,24 +342,15 @@ class _ProfileState extends State<Profile> {
 
     setState(() {
       profileImage = defaultImagePath;
-      image = Container(
-        decoration: BoxDecoration(
-            color: Constants.currentTheme == 'dark' ? Colors.black38 : Colors.white
-        ),
-        child: CachedNetworkImage(
-          imageUrl: profileImage,
-          placeholder: (context, url) =>
-              Center(
-                child: CircularProgressIndicator(
-                  valueColor: new AlwaysStoppedAnimation<Color>(Constants.accentColor),
-                ),
-              ),
-          imageBuilder: (context, image) => CircleAvatar(
-            backgroundImage: image,
-            radius: 70,
-          ),
+      image = CircleAvatar(
+        radius: 30,
+        child: ProgressiveImage(
+          placeholder: AssetImage('assets/default.png'),
+          image: AssetImage('assets/default.png'),
+          thumbnail: AssetImage('assets/default.png'),
           height: 150,
           width: 150,
+          blur: 2.8,
         ),
       );
     });
@@ -230,7 +358,11 @@ class _ProfileState extends State<Profile> {
 
   _modalBottomSheetMenu(context){
     showModalBottomSheet(
-      context: context, builder: (BuildContext bc) {
+      context: context,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        builder: (BuildContext bc) {
         return Container(
           height: MediaQuery.of(context).size.height / 4.5,
           child: Padding(
@@ -267,8 +399,8 @@ class _ProfileState extends State<Profile> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.pop(context);
-                        removeProfilePhoto();
+                        Navigator.of(context).pop();
+                        showAlertDialog(context);
                       },
                       child: Column(
                         children: [
@@ -298,8 +430,8 @@ class _ProfileState extends State<Profile> {
                     SizedBox(width: 15),
                     GestureDetector(
                       onTap: () {
+                        Navigator.of(context).pop();
                         getImageFromGallery();
-                        Navigator.pop(context);
                       },
                       child: Column(
                         children: [
@@ -351,7 +483,7 @@ class _ProfileState extends State<Profile> {
                             "Camera",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                fontSize: 13
+                              fontSize: 13
                             ),
                           ),
                         ],
@@ -371,6 +503,7 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
+      key: _scaffoldKey,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.keyboard_arrow_left, color: Colors.white),
@@ -389,7 +522,7 @@ class _ProfileState extends State<Profile> {
       Center(
         child: JumpingDotsProgressIndicator(
           fontSize: 55.0,
-          color: Constants.currentTheme == "dark" ? Colors.white : widget.lightThemeColor,
+          color: Constants.currentTheme == "dark" ? Colors.white : Constants.accentColor,
         ),
       ) : SingleChildScrollView(
         child: Container(
@@ -403,6 +536,7 @@ class _ProfileState extends State<Profile> {
                   children: [
                      CircleAvatar(
                       radius: 70,
+                      backgroundColor: Colors.transparent,
                       child: ClipOval(
                         child: new SizedBox(
                           width: 140.0,
@@ -412,7 +546,9 @@ class _ProfileState extends State<Profile> {
                             _image,
                             fit: BoxFit.fill,
                           ) :
-                          image
+                          Container(
+                            child: image,
+                          )
                         ),
                       ),
                     ),
@@ -423,10 +559,9 @@ class _ProfileState extends State<Profile> {
                           _modalBottomSheetMenu(context);
                         },
                         child: Container(
-                          // margin: EdgeInsets.symmetric(horizontal: 3, vertical: 3),
                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                           decoration: BoxDecoration(
-                            color: widget.lightThemeColor,
+                            color: Constants.accentColor,
                             borderRadius: BorderRadius.circular(30)
                           ),
                           child: Icon(
@@ -451,7 +586,6 @@ class _ProfileState extends State<Profile> {
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w300,
-                            color: Colors.white,
                             decoration: TextDecoration.none
                         ),
                         keyboardType: TextInputType.text,
@@ -475,7 +609,9 @@ class _ProfileState extends State<Profile> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
-                              color: widget.lightThemeColor,
+                              color: Constants.accentColor == Colors.black ?
+                              Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                                  : Constants.accentColor ,
                               style: BorderStyle.solid,
                               width: 3,
                             ),
@@ -498,7 +634,7 @@ class _ProfileState extends State<Profile> {
                           labelStyle: TextStyle(
                             color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
                           ),
-                          focusColor: widget.lightThemeColor,
+                          focusColor: Constants.accentColor,
                           border: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: new BorderSide(
@@ -509,7 +645,9 @@ class _ProfileState extends State<Profile> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: new BorderRadius.circular(32.0),
                             borderSide: BorderSide(
-                              color: widget.lightThemeColor,
+                              color: Constants.accentColor == Colors.black ?
+                              Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                                  : Constants.accentColor,
                               style: BorderStyle.solid,
                               width: 3,
                             ),
@@ -523,7 +661,7 @@ class _ProfileState extends State<Profile> {
                           await _updateProfile(context);
                         },
                         child: customButtonDark(
-                          context, "Update", 18, widget.lightThemeColor
+                          context, updateStateButtonTitle, 18, Constants.accentColor
                         ),
                       ),
                       SizedBox(height: 20),

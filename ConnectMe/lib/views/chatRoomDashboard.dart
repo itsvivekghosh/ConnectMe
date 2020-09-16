@@ -1,11 +1,19 @@
-import 'package:ConnectMe/views/settings.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:ConnectMe/views/home.dart';
 import 'package:ConnectMe/views/profile.dart';
 import 'package:ConnectMe/services/auth.dart';
+import 'package:ConnectMe/services/database.dart';
+import 'package:ConnectMe/views/settings.dart';
+import 'package:ConnectMe/views/themeSwitcher.dart';
+import 'package:ConnectMe/widgets/widgets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ConnectMe/helper/constants.dart';
+import 'package:progressive_image/progressive_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class ChatRoom extends StatefulWidget {
@@ -20,16 +28,21 @@ class ChatRoom extends StatefulWidget {
 }
 
 class _ChatRoomState extends State<ChatRoom> {
-
+  Widget image;
+  dynamic _image;
   String loggedInEmail;
+  String gotBioMessage;
   Choice selectedChoice;
   String loggedInUsername;
   bool _isSearching = false;
   String searchQuery = "Search Query";
+
+  final formKey = GlobalKey<FormState>();
   AuthService authService = new AuthService();
   TextEditingController searchEditingController;
-  String darkThemeAssetPath = 'assets/theme/default_dark.jpg';
-  String lightThemeAssetPath = 'assets/theme/default_light.jpg';
+  String darkThemeAssetPath = 'assets/theme/dark_green.jpg';
+  String lightThemeAssetPath = 'assets/theme/light_green.jpg';
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   _select(Choice choice) async{
     final myChoice = choice.title;
@@ -57,6 +70,7 @@ class _ChatRoomState extends State<ChatRoom> {
             lightThemeColor: widget.lightThemeColor,
             userName: Constants.userName,
             toggleAccentColor: widget.toggleAccentColor,
+            image: image,
           ),
         ),
       );
@@ -67,9 +81,14 @@ class _ChatRoomState extends State<ChatRoom> {
     }
 
     else if (myChoice == 'Theme') {
-      setState(() {
-        widget.toggleTheme();
-      });
+      Navigator.push(context, CupertinoPageRoute(
+        builder: (context) => ThemeSwitcher(
+          toggleTheme: widget.toggleTheme,
+          lightThemeColor: widget.lightThemeColor,
+          toggleAccentColor: widget.toggleAccentColor,
+        ),
+        ),
+      );
     }
 
     else if (myChoice == 'Logout') {
@@ -84,15 +103,26 @@ class _ChatRoomState extends State<ChatRoom> {
       );
     }
   }
-
+  
   @override
   void initState() {
+    getProfileImage();
+    getProfileInfo();
     searchEditingController = new TextEditingController();
     super.initState();
   }
 
+  getProfileInfo() async {
+    var firebaseUser = await FirebaseAuth.instance.currentUser();
+    final DatabaseMethods _databaseMethods = new DatabaseMethods();
+    var userData = await _databaseMethods.getUsersByUserEmail(firebaseUser.email);
+
+    setState(() {
+      gotBioMessage = userData.documents[0].data['bio'];
+    });
+  }
+
   void _startSearch() {
-    // print("open search box");
     ModalRoute
         .of(context)
         .addLocalHistoryEntry(new LocalHistoryEntry(onRemove: _stopSearching));
@@ -142,6 +172,167 @@ class _ChatRoomState extends State<ChatRoom> {
     );
   }
 
+
+  dynamic getProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var firebaseUser = await FirebaseAuth.instance.currentUser();
+    final DatabaseMethods _databaseMethods = new DatabaseMethods();
+    var userData = await _databaseMethods.getUsersByUserEmail(firebaseUser.email);
+    var profileImage = userData.documents[0].data['profileImage'];
+    imageCache.clear();
+
+    setState(() {
+      if (prefs.getString('profileImagePath') == Constants.profilePhotoUrl || prefs.getString('profileImagePath') == '') {
+        image = ClipOval(
+          child: ProgressiveImage(
+            placeholder: AssetImage('assets/default.png'),
+            image: NetworkImage(profileImage),
+            thumbnail: AssetImage('assets/default.png'),
+            width: 85,
+            height: 85,
+            fit: BoxFit.cover,
+            blur: 3,
+          ),
+        );
+        _image = ClipOval(
+          child: ProgressiveImage(
+            placeholder: AssetImage('assets/default.png'),
+            image: NetworkImage(profileImage),
+            thumbnail: AssetImage('assets/default.png'),
+            width: 30,
+            height: 30,
+            blur: 3,
+            fit: BoxFit.cover,
+          ),
+        );
+      }
+      else {
+        try {
+          image = ClipOval(
+            child: ProgressiveImage(
+              placeholder: FileImage(File(prefs.getString('profileImagePath'))),
+              image: NetworkImage(profileImage),
+              thumbnail: FileImage(File(prefs.getString('profileImagePath'))),
+              width: 85,
+              height: 85,
+              fit: BoxFit.cover,
+              blur: 3,
+            ),
+          );
+
+          _image = ClipOval(
+            child: ProgressiveImage(
+              placeholder: FileImage(File(prefs.getString('profileImagePath'))),
+              image: NetworkImage(profileImage),
+              thumbnail: FileImage(File(prefs.getString('profileImagePath'))),
+              width: 30,
+              height: 30,
+              blur: 3,
+              fit: BoxFit.cover,
+            ),
+          );
+        } catch (e) {
+          image = ClipOval(
+            child: ProgressiveImage(
+              placeholder: NetworkImage(profileImage),
+              image: NetworkImage(profileImage),
+              thumbnail: NetworkImage(profileImage),
+              width: 85,
+              height: 85,
+              fit: BoxFit.cover,
+              blur: 3,
+            ),
+          );
+          _image = ClipOval(
+            child: ProgressiveImage(
+              placeholder: NetworkImage(profileImage),
+              image: NetworkImage(profileImage),
+              thumbnail: NetworkImage(profileImage),
+              width: 30,
+              height: 30,
+              blur: 3,
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  removeBio() async {
+    if (gotBioMessage == null) {
+      _scaffoldKey.currentState.showSnackBar(
+          showSnackBarWithMessage("Cannot Remove Empty Bio!", "", Colors.red)
+      );
+      Navigator.of(context).pop();
+      return;
+    }
+    FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
+    Map<String, String> userUpdateMap = {
+      'bio': null,
+    };
+
+    await Firestore.instance
+        .collection('users')
+        .document(_firebaseUser.uid)
+        .updateData(userUpdateMap).catchError((e) {
+      print("Unable to Update data.. $e");
+    });
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    prefs.setString('bio', null)
+        .catchError((onError) {
+      print("Error storing bio preferences $onError");
+    });
+    Constants.bioMessage = null;
+
+    setState(() {
+      gotBioMessage = null;
+    });
+
+    _scaffoldKey.currentState.showSnackBar(
+      showSnackBarWithMessage("Your Bio has been Removed Successfully!", "", Colors.red)
+    );
+    Navigator.of(context).pop();
+  }
+
+  updateBio(bioMessage) async {
+    if (formKey.currentState.validate()) {
+      FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
+
+      Map<String, String> userUpdateMap = {
+        'bio': bioMessage == '' ? null : bioMessage,
+      };
+
+      await Firestore.instance
+          .collection('users')
+          .document(_firebaseUser.uid)
+          .updateData(userUpdateMap).catchError((e) {
+        print("Unable to Update data.. $e");
+      });
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      prefs.setString('bio', bioMessage)
+          .catchError((onError) {
+        print("Error storing bio preferences $onError");
+      });
+      Constants.bioMessage = bioMessage;
+
+      setState(() {
+        gotBioMessage = bioMessage;
+      });
+
+      _scaffoldKey.currentState.showSnackBar(
+          showSnackBarWithMessage("Your Bio has been Updated Successfully!", "", Colors.green)
+      );
+      Navigator.of(context).pop();
+    } else {
+      // some error code here
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -156,9 +347,12 @@ class _ChatRoomState extends State<ChatRoom> {
           }
         });
         return Scaffold(
+          key: _scaffoldKey,
+          resizeToAvoidBottomPadding: true,
           appBar: PreferredSize(
             preferredSize: Size.fromHeight(50.0) * 2.37,
             child: AppBar(
+              automaticallyImplyLeading: false,
               backgroundColor: Constants.currentTheme != 'dark' ? Constants.accentColor : null,
               leading: _isSearching ? const BackButton() : null,
               title: _isSearching ? _buildSearchField() : Container(
@@ -173,7 +367,9 @@ class _ChatRoomState extends State<ChatRoom> {
               ),
               bottom: TabBar(
                 tabs: tabs,
-                indicatorColor: Constants.currentTheme == 'dark' ? Constants.accentColor : Colors.white,
+                indicatorColor: Constants.currentTheme == 'dark' ?
+                  Constants.accentColor == Colors.black ? Colors.white : Constants.accentColor
+                    : Colors.white
               ),
               actions: _buildActions(),
               // actions: <Widget>[
@@ -239,13 +435,14 @@ class _ChatRoomState extends State<ChatRoom> {
         padding: EdgeInsets.only(top: 5),
         child: new GestureDetector(
           onTap: () {
-            print("Profile");
+            _modalBottomSheetMenu(context);
           },
           child: Container(
-            height: 26, width: 26,
+            height: 30, width: 30,
             child: CircleAvatar(
               radius: 30,
-              backgroundImage: AssetImage('assets/batman.jpeg'),
+              child: _image,
+              backgroundColor: Colors.transparent,
             ),
           )
         ),
@@ -286,6 +483,195 @@ class _ChatRoomState extends State<ChatRoom> {
         ),
       ),
     ];
+  }
+
+  _modalBottomSheetMenu(context) async {
+
+    FocusNode myFocusNode = new FocusNode();
+    TextEditingController bioEditingController = new TextEditingController();
+
+    showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        enableDrag: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        builder: (context) {
+      return CupertinoPageScaffold (
+        backgroundColor: Colors.transparent,
+        resizeToAvoidBottomInset: true,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+          child: Container(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(context, CupertinoPageRoute(
+                      builder: (context) => Profile(
+                        toggleTheme: widget.toggleTheme,
+                        toggleAccentColor: widget.toggleAccentColor,
+                        lightThemeColor: widget.lightThemeColor,
+                        userName: Constants.userName,
+                        phoneNumber: Constants.phoneNumber,
+                      ),
+                    ));
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // image != null ? image : Container(),
+                      Container(
+                        child: image,
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            Constants.userName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 30
+                            ),
+                          ),
+                          Text(
+                            Constants.userEmail,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w300,
+                              fontSize: 14,
+                              color: Constants.currentTheme == "dark" ? Colors.white54 : Colors.black54
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(Icons.keyboard_arrow_right),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  "Manage Your Bio",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                SizedBox(height: 10,),
+                Form(
+                  key: formKey,
+                  child: TextFormField(
+                    focusNode: myFocusNode,
+                    validator: (val){
+                      return val == '' ? "Bio Cannot be Empty!" : null;
+                    },
+                    controller: bioEditingController,
+                    decoration: InputDecoration(
+                      labelText: gotBioMessage == null ? "Enter Bio" : gotBioMessage,
+                      hintText: "Enter Your Bio here",
+                      hintStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38,
+                        fontWeight: FontWeight.w300
+                      ),
+                      labelStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
+                        fontSize: myFocusNode.hasFocus ? 20 : 18,
+                        fontWeight: FontWeight.w500
+                      ),
+                      border: new OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: Constants.accentColor == Colors.black ?
+                          Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                              : Constants.accentColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                Container(
+                  padding: EdgeInsets.only(left: 40),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          removeBio();
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              gradient: LinearGradient(colors: [
+                                Colors.white,
+                                Colors.white
+                              ]),
+                              boxShadow: Constants.currentTheme == 'light' ? [BoxShadow(spreadRadius: 0.3)]: null
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 20,),
+                            margin: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              "Remove Bio",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          updateBio(bioEditingController.text);
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              gradient: LinearGradient(colors: [
+                                Constants.accentColor, Constants.accentColor
+                              ])
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 20,),
+                            margin: EdgeInsets.symmetric(horizontal: 3),
+                            child: Text(
+                                "Update Bio",
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold
+                                )
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 

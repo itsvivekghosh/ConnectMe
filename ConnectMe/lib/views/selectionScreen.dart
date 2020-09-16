@@ -34,7 +34,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
     Center(
       child: JumpingDotsProgressIndicator(
         fontSize: 40.0,
-        color: Constants.currentTheme == 'dark' ? Colors.white : Colors.green,
+        color: Constants.currentTheme == 'dark' ? Colors.white : Constants.accentColor,
       ),
     ) :
     SingleChildScrollView(
@@ -97,7 +97,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
                           gradient: LinearGradient(colors: [
-                            widget.lightThemeColor, widget.lightThemeColor
+                            Constants.accentColor, Constants.accentColor
                           ]
                         ),
                       ),

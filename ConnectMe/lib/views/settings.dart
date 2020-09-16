@@ -1,4 +1,5 @@
 import 'package:ConnectMe/helper/constants.dart';
+import 'package:ConnectMe/views/accounts.dart';
 import 'package:ConnectMe/views/profile.dart';
 import 'package:ConnectMe/views/themeSwitcher.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,7 +13,8 @@ class SettingsPage extends StatefulWidget {
   final Function toggleTheme, toggleAccentColor;
   final Color lightThemeColor;
   final String userName, phoneNumber;
-  SettingsPage({this.toggleTheme, this.lightThemeColor, this.userName, this.phoneNumber, this.toggleAccentColor});
+  final Widget image;
+  SettingsPage({this.image, this.toggleTheme, this.lightThemeColor, this.userName, this.phoneNumber, this.toggleAccentColor});
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
@@ -49,6 +51,7 @@ class _SettingsPageState extends State<SettingsPage> {
           lightColorTheme: widget.lightThemeColor,
           toggleTheme: widget.toggleTheme,
           toggleAccentColor: widget.toggleAccentColor,
+          image: widget.image
         ),
       ),
     );
@@ -58,7 +61,8 @@ class _SettingsPageState extends State<SettingsPage> {
 class SettingsItems extends StatefulWidget {
   final Function toggleTheme, toggleAccentColor;
   final Color lightColorTheme;
-  SettingsItems({this.lightColorTheme, this.toggleTheme, this.toggleAccentColor});
+  final Widget image;
+  SettingsItems({this.lightColorTheme, this.toggleTheme, this.toggleAccentColor, this.image});
 
   @override
   _SettingsItemsState createState() => _SettingsItemsState();
@@ -71,14 +75,57 @@ class _SettingsItemsState extends State<SettingsItems> {
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.only(top: 40),
-            child: Text('Profile'),
+            padding: EdgeInsets.only(top: 25),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: GestureDetector(
+                onDoubleTap: () {
+                  Navigator.push(context, CupertinoPageRoute(
+                    builder: (context) => Profile(
+                      toggleTheme: widget.toggleTheme,
+                      lightThemeColor: widget.lightColorTheme,
+                      toggleAccentColor: widget.toggleAccentColor
+                    ),
+                  ),
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    widget.image,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Constants.userName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30
+                          ),
+                        ),
+                        Text(
+                          Constants.userEmail,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w300,
+                            fontSize: 14,
+                            color: Constants.currentTheme == "dark" ? Colors.white54 : Colors.black54
+                          ),
+                        ),
+                      ],
+                    ),
+                    Icon(Icons.keyboard_arrow_right),
+                  ],
+                ),
+              ),
+            ),
           ),
+          SizedBox(height: 20),
+          drawLine(),
           Container(
             padding: EdgeInsets.only(left: 40),
             child: Column(
               children: [
-                SizedBox(height: 30,),
+                SizedBox(height: 20,),
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -87,7 +134,7 @@ class _SettingsItemsState extends State<SettingsItems> {
                     });
                   },
                   child: settingsTile(
-                    'Accounts', "Privacy, Security, Change Number", Icons.account_circle, Constants.accentColor
+                    'Accounts', "Privacy, Security, Change Password", Icons.account_circle, Constants.accentColor
                   ),
                 ),
                 drawLine(),
@@ -231,13 +278,21 @@ Widget drawLine() {
 
 createActivity(context, toggleTheme, lightThemeColor, toggleAccentColor) {
   if (selectedItem == 1) {
-      Navigator.push(context, CupertinoPageRoute(
-        builder: (context) => Profile(
-          toggleTheme: toggleTheme,
-          lightThemeColor: lightThemeColor,
-          toggleAccentColor: toggleAccentColor
-        ),
+    //   Navigator.push(context, CupertinoPageRoute(
+    //     builder: (context) => Profile(
+    //       toggleTheme: toggleTheme,
+    //       lightThemeColor: lightThemeColor,
+    //       toggleAccentColor: toggleAccentColor
+    //     ),
+    //   ),
+    // );
+    Navigator.push(context, CupertinoPageRoute(
+      builder: (context) => AccountSettings(
+        toggleTheme: toggleTheme,
+        lightThemeColor: lightThemeColor,
+        toggleAccentColor: toggleAccentColor
       ),
+    ),
     );
   }
   else if (selectedItem == 2) {

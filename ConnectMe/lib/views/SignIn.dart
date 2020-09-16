@@ -40,7 +40,6 @@ class _SignInState extends State<SignIn> {
   String titleSignIn = "Sign In";
 
   GoogleSignIn googleAuth = new GoogleSignIn();
-  // final GlobalKey<State> _keyLoader = new GlobalKey<State>();
   TextEditingController emailTextEditingController = new TextEditingController();
   TextEditingController passwordTextEditingController = new TextEditingController();
 
@@ -87,7 +86,7 @@ class _SignInState extends State<SignIn> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('email', user.email)
           .then((value) {
-            print("Saved email as ${user.email}");
+            // print("Saved email as ${user.email}");
           })
           .catchError((onError) {
             print("Error storing email preferences");
@@ -95,7 +94,7 @@ class _SignInState extends State<SignIn> {
 
       prefs.setString('name', user.displayName)
           .then((value) {
-            print("Saved name as ${user.displayName}");
+            // print("Saved name as ${user.displayName}");
           })
           .catchError((onError) {
             print("Error storing name preferences");
@@ -123,7 +122,6 @@ class _SignInState extends State<SignIn> {
   }
 
   signIn() async {
-    // showLoadingDialog('Logging In', context, _keyLoader);
     if (formKey.currentState.validate()) {
 
       await authService
@@ -351,7 +349,6 @@ class _SignInState extends State<SignIn> {
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w300,
-                          color: Constants.currentTheme == "dark" ? Colors.white : Colors.black,
                           decoration: TextDecoration.none
                       ),
                       keyboardType: TextInputType.emailAddress,
@@ -360,7 +357,7 @@ class _SignInState extends State<SignIn> {
                           labelText: "Enter Your Email",
                           hintText: "Enter your Registered Email ID",
                           hintStyle: TextStyle(
-                            color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
+                            color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
                           ),
                           border: new OutlineInputBorder(
                           borderRadius: new BorderRadius.circular(32.0),
@@ -373,7 +370,9 @@ class _SignInState extends State<SignIn> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: new BorderRadius.circular(32.0),
                           borderSide: BorderSide(
-                            color: widget.lightThemeColor,
+                            color: Constants.accentColor == Colors.black ?
+                            Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                                : Constants.accentColor ,
                             style: BorderStyle.solid,
                             width: 3,
                           ),
@@ -398,7 +397,8 @@ class _SignInState extends State<SignIn> {
                               color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
                           ),
                           labelStyle: TextStyle(
-                            decorationColor: widget.lightThemeColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w300,
                           ),
                           border: new OutlineInputBorder(
                           borderRadius: new BorderRadius.circular(32.0),
@@ -424,7 +424,9 @@ class _SignInState extends State<SignIn> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: new BorderRadius.circular(32.0),
                           borderSide: BorderSide(
-                            color: widget.lightThemeColor,
+                            color: Constants.accentColor == Colors.black ?
+                            Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                                : Constants.accentColor,
                             style: BorderStyle.solid,
                             width: 3,
                           ),
@@ -457,7 +459,7 @@ class _SignInState extends State<SignIn> {
                         validateAndSignMeIn();
                       },
                       child: customButtonDark(
-                          context, titleSignIn, 18, widget.lightThemeColor
+                          context, titleSignIn, 18, Constants.accentColor
                       ),
                     ),
                     SizedBox(height: 10),

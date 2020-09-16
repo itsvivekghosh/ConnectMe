@@ -1,5 +1,6 @@
 import 'package:ConnectMe/helper/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:progressive_image/progressive_image.dart';
 
 class ThemeSwitcher extends StatefulWidget {
   final Function toggleTheme, toggleAccentColor;
@@ -80,7 +81,7 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
             child: Column(
               children: [
                 Container(
-                  child: themeTile('assets/theme/default_light.jpg'),
+                  child: themeTile(Constants.lightThemeAccentPath),
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
@@ -98,8 +99,8 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
                 Text(
                   "Light",
                   style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16
                   ),
                 ),
               ],
@@ -117,7 +118,7 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
             child: Column(
               children: [
                 Container(
-                  child: themeTile('assets/theme/default_dark.jpg'),
+                  child: themeTile(Constants.darkThemeAccentPath),
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
@@ -134,8 +135,8 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
                   child: Text(
                     "Dark",
                     style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16
                     ),
                   ),
                 ),
@@ -155,6 +156,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.red);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_red.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_red.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -165,6 +170,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.green);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_green.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_green.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -175,6 +184,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.blue);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_blue.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_blue.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -185,6 +198,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.brown);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_brown.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_brown.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -195,6 +212,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.deepOrange);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_orange.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_orange.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -205,6 +226,10 @@ class _ThemeSwitcherState extends State<ThemeSwitcher> {
           GestureDetector(
             onTap: () {
               widget.toggleAccentColor(Colors.black);
+              setState(() {
+                Constants.darkThemeAccentPath = 'assets/theme/dark/dark_black.jpg';
+                Constants.lightThemeAccentPath = 'assets/theme/light/light_black.jpg';
+              });
             },
             child: Container(
               child: drawCircle(
@@ -226,11 +251,12 @@ Widget themeTile(pathToImage) {
         bottomLeft: Radius.circular(10),
         bottomRight: Radius.circular(10)
     ),
-    child: Image.asset(
-      pathToImage,
+    child: ProgressiveImage(
+      placeholder: AssetImage(pathToImage),
       width: 142.0,
-      height: 148.0,
-      fit: BoxFit.fill,
+      height: 160.0,
+      thumbnail: AssetImage(pathToImage),
+      image: AssetImage(pathToImage),
     ),
   );
 }

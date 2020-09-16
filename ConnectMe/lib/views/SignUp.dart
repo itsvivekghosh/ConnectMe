@@ -47,7 +47,7 @@ class _SignUpState extends State<SignUp> {
     });
 
     if (formKey.currentState.validate()) {
-      showLoadingDialog('Creating Your Account', context, _keyLoader);
+
       Map<String, String> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
@@ -105,7 +105,6 @@ class _SignUpState extends State<SignUp> {
           Constants.userEmail = emailEditingController.text;
           Constants.profilePhotoUrl = profilePhotoUrl;
 
-          Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
           Navigator.pop(context);
           Navigator.pushReplacement(
             context,
