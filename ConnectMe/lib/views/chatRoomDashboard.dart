@@ -568,6 +568,7 @@ class _ChatRoomState extends State<ChatRoom> {
                       return val == '' ? "Bio Cannot be Empty!" : null;
                     },
                     controller: bioEditingController,
+                    keyboardType: TextInputType.text,
                     decoration: InputDecoration(
                       labelText: gotBioMessage == null ? "Enter Bio" : gotBioMessage,
                       hintText: "Enter Your Bio here",

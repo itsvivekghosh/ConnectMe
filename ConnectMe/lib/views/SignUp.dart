@@ -48,9 +48,11 @@ class _SignUpState extends State<SignUp> {
 
     if (formKey.currentState.validate()) {
 
-      Map<String, String> userMap = {
+      Map<String, dynamic> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
+        'gender': "Male",
+        'dateOfBirth': DateTime.now(),
         'phoneNumber': phoneNumberEditingController.text,
         'profileImage': 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png',
       };

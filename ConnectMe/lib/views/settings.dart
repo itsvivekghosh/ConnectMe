@@ -79,7 +79,7 @@ class _SettingsItemsState extends State<SettingsItems> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 30),
               child: GestureDetector(
-                onDoubleTap: () {
+                onTap: () {
                   Navigator.push(context, CupertinoPageRoute(
                     builder: (context) => Profile(
                       toggleTheme: widget.toggleTheme,
@@ -154,9 +154,11 @@ class _SettingsItemsState extends State<SettingsItems> {
                 SizedBox(height: 25),
                 GestureDetector(
                   onTap: () {
+                    print("notifications");
                     setState(() {
                       selectedItem = 3;
                     });
+                    createActivity(context, widget.toggleTheme, widget.lightColorTheme, widget.toggleAccentColor);
                   },
                   child: settingsTile(
                       'Notifications', "Message and Group Tones", Icons.notifications, Constants.accentColor
@@ -278,14 +280,6 @@ Widget drawLine() {
 
 createActivity(context, toggleTheme, lightThemeColor, toggleAccentColor) {
   if (selectedItem == 1) {
-    //   Navigator.push(context, CupertinoPageRoute(
-    //     builder: (context) => Profile(
-    //       toggleTheme: toggleTheme,
-    //       lightThemeColor: lightThemeColor,
-    //       toggleAccentColor: toggleAccentColor
-    //     ),
-    //   ),
-    // );
     Navigator.push(context, CupertinoPageRoute(
       builder: (context) => AccountSettings(
         toggleTheme: toggleTheme,

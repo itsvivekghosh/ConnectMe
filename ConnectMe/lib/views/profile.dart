@@ -99,7 +99,6 @@ class _ProfileState extends State<Profile> {
             ),
           );
         } catch (e) {
-          print("Error Loading Profile Image: $e");
           image = Container(
             child: ProgressiveImage(
               placeholder: NetworkImage(profileImage),
@@ -495,7 +494,7 @@ class _ProfileState extends State<Profile> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
@@ -521,7 +520,7 @@ class _ProfileState extends State<Profile> {
       body: _loading ?
       Center(
         child: JumpingDotsProgressIndicator(
-          fontSize: 55.0,
+          fontSize: 40.0,
           color: Constants.currentTheme == "dark" ? Colors.white : Constants.accentColor,
         ),
       ) : SingleChildScrollView(
@@ -581,12 +580,13 @@ class _ProfileState extends State<Profile> {
                 child: Form(
                   key: formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextFormField(
                         style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w300,
-                            decoration: TextDecoration.none
+                          fontSize: 18,
+                          fontWeight: FontWeight.w300,
+                          decoration: TextDecoration.none
                         ),
                         keyboardType: TextInputType.text,
                         controller: userNameController,
@@ -621,15 +621,18 @@ class _ProfileState extends State<Profile> {
                       SizedBox(height: 22),
                       IntlPhoneField(
                         style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w300
+                          fontSize: 18,
+                          fontWeight: FontWeight.w300
                         ),
+                        onChanged: (phone) {
+                          print(phone.completeNumber);
+                        },
                         controller: phoneNumberController,
                         decoration: InputDecoration(
                           labelText: phoneNumber,
                           hintText: "Enter new Number",
                           hintStyle: TextStyle(
-                              color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
+                            color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
                           ),
                           labelStyle: TextStyle(
                             color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
@@ -647,7 +650,7 @@ class _ProfileState extends State<Profile> {
                             borderSide: BorderSide(
                               color: Constants.accentColor == Colors.black ?
                               Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
-                                  : Constants.accentColor,
+                                : Constants.accentColor,
                               style: BorderStyle.solid,
                               width: 3,
                             ),
