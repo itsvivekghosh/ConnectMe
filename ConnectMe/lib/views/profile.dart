@@ -13,8 +13,8 @@ import 'package:ConnectMe/services/database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:progressive_image/progressive_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -33,7 +33,7 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   File _image;
   String userName;
-  String phoneNumber;
+  String phoneNumber, countryCode;
   Widget image;
   bool _loading = true;
   String saveImagePath = '';
@@ -45,6 +45,7 @@ class _ProfileState extends State<Profile> {
   final DatabaseMethods _databaseMethods = new DatabaseMethods();
   TextEditingController userNameController = new TextEditingController();
   TextEditingController phoneNumberController = new TextEditingController();
+  TextEditingController countryCodeController = new TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   String profileImage = 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png';
 
@@ -72,6 +73,17 @@ class _ProfileState extends State<Profile> {
       userName = userData.documents[0].data['name'];
       phoneNumber = userData.documents[0].data['phoneNumber'];
       profileImage = userData.documents[0].data['profileImage'];
+
+      // extracting phoneNumber
+      if (phoneNumber != null) {
+        var fullPhoneNumber = phoneNumber.split(' ');
+        if (fullPhoneNumber.length == 2) {
+          setState(() {
+            countryCode = fullPhoneNumber[0];
+            phoneNumber = fullPhoneNumber[1];
+          });
+        }
+      }
 
       if (prefs.getString('profileImagePath') == Constants.profilePhotoUrl || prefs.getString('profileImagePath') == '') {
         image = Container(
@@ -144,20 +156,6 @@ class _ProfileState extends State<Profile> {
       ),
       onPressed:  () {
         removeProfilePhoto(context);
-        Navigator.of(context, rootNavigator: true).pop();
-
-        Navigator.pop(context);
-        Navigator.pushReplacement(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => ChatRoom(
-              toggleAccentColor: widget.toggleAccentColor,
-              toggleTheme: widget.toggleTheme,
-              lightThemeColor: widget.lightThemeColor,
-              isGoogleSignIn: false
-            ),
-          ),
-        );
       },
     );
 
@@ -193,7 +191,12 @@ class _ProfileState extends State<Profile> {
   }
 
   Future _updateProfile(context) async {
-    if (_image == null && userNameController.text.isEmpty && phoneNumberController.text.isEmpty) {
+    if (
+          _image == null &&
+          userNameController.text.isEmpty &&
+          phoneNumberController.text.isEmpty &&
+          countryCodeController.text.isEmpty
+        ) {
       _scaffoldKey.currentState.showSnackBar(
           showSnackBarWithMessage("Got Empty Credentials", "Please Try again!", Colors.red)
       );
@@ -201,14 +204,15 @@ class _ProfileState extends State<Profile> {
     }
 
     FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();
-    var name, number;
+    var name, number, _countryCode;
 
     name = userNameController.text.isEmpty ? userName : userNameController.text;
     number = phoneNumberController.text.isEmpty ? phoneNumber : phoneNumberController.text;
+    _countryCode = countryCodeController.text.isEmpty ? countryCode : countryCodeController.text;
 
     Map<String, String> userUpdateMap = {
       'name': name,
-      'phoneNumber': number,
+      'phoneNumber': countryCode + " " + number,
     };
     setState(() {
       updateStateButtonTitle = 'UPDATING...';
@@ -353,6 +357,21 @@ class _ProfileState extends State<Profile> {
         ),
       );
     });
+
+    Navigator.of(context, rootNavigator: true).pop();
+
+    Navigator.pop(context);
+    Navigator.pushReplacement(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => ChatRoom(
+          toggleAccentColor: widget.toggleAccentColor,
+          toggleTheme: widget.toggleTheme,
+          lightThemeColor: widget.lightThemeColor,
+          isGoogleSignIn: false
+        ),
+      ),
+    );
   }
 
   _modalBottomSheetMenu(context){
@@ -545,9 +564,25 @@ class _ProfileState extends State<Profile> {
                             _image,
                             fit: BoxFit.fill,
                           ) :
-                          Container(
-                            child: image,
-                          )
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(context, CupertinoPageRoute(builder: (_) {
+                                return Scaffold(
+                                  appBar: AppBar(
+                                    backgroundColor: Colors.black,
+                                    title: Text(userName, style: TextStyle(fontWeight: FontWeight.w300)),
+                                    centerTitle: true,
+                                  ),
+                                  body: PhotoView(
+                                    imageProvider: NetworkImage(profileImage)
+                                  ),
+                                );
+                              }));
+                            },
+                            child: Container(
+                              child: image,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -619,45 +654,7 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                       SizedBox(height: 22),
-                      IntlPhoneField(
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w300
-                        ),
-                        onChanged: (phone) {
-                          print(phone.completeNumber);
-                        },
-                        controller: phoneNumberController,
-                        decoration: InputDecoration(
-                          labelText: phoneNumber,
-                          hintText: "Enter new Number",
-                          hintStyle: TextStyle(
-                            color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
-                          ),
-                          labelStyle: TextStyle(
-                            color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
-                          ),
-                          focusColor: Constants.accentColor,
-                          border: OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(32.0),
-                            borderSide: new BorderSide(
-                              color: Colors.grey,
-                              width: 1,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: new BorderRadius.circular(32.0),
-                            borderSide: BorderSide(
-                              color: Constants.accentColor == Colors.black ?
-                              Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
-                                : Constants.accentColor,
-                              style: BorderStyle.solid,
-                              width: 3,
-                            ),
-                          ),
-                        ),
-                        initialCountryCode: 'IN',
-                      ),
+                      phoneField(),
                       SizedBox(height: 30,),
                       GestureDetector(
                         onTap: () async {
@@ -692,6 +689,99 @@ class _ProfileState extends State<Profile> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget phoneField() {
+    return Container(
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    keyboardType: TextInputType.phone,
+                    textAlign: TextAlign.end,
+                    controller: countryCodeController,
+                    maxLength: 4,
+                    decoration: InputDecoration(
+                      hintText: "+91",
+                      labelText: countryCode,
+                      focusColor: Constants.accentColor,
+                      hintStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
+                      ),
+                      labelStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: Constants.accentColor == Colors.black ?
+                          Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                              : Constants.accentColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 4),
+                Expanded(
+                  flex: 4,
+                  child: TextFormField(
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w300
+                    ),
+                    maxLength: 10,
+                    controller: phoneNumberController,
+                    decoration: InputDecoration(
+                      labelText: phoneNumber,
+                      hintText: "Enter new Number",
+                      hintStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black26,
+                      ),
+                      labelStyle: TextStyle(
+                        color: Constants.currentTheme == 'dark' ? Colors.white : Colors.black,
+                      ),
+                      focusColor: Constants.accentColor,
+                      border: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: Constants.accentColor == Colors.black ?
+                          Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                            : Constants.accentColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

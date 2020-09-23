@@ -13,7 +13,7 @@ class AuthService {
     return user != null ? Person(personId: user.uid) : null;
   }
 
-  Future signInWithEmailAndPassword(String email, String password) async {
+  signInWithEmailAndPassword(String email, String password) async {
     try {
       AuthResult result = await _auth.signInWithEmailAndPassword(
           email: email, password: password);
@@ -26,7 +26,7 @@ class AuthService {
     }
   }
 
-  Future signUpWithEmailAndPassword(String email, String password, dynamic userMap) async {
+  signUpWithEmailAndPassword(String email, String password, dynamic userMap) async {
     try {
       AuthResult result = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
@@ -47,7 +47,7 @@ class AuthService {
     }
   }
 
-  Future resetPasswordUsingEmail(String email) async {
+  resetPasswordUsingEmail(String email) async {
     try {
       return await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
@@ -56,7 +56,7 @@ class AuthService {
     }
   }
 
-  Future<String> signOut() async {
+  signOut() async {
     try {
       await _auth.signOut();
       await googleSignIn.signOut();
@@ -81,7 +81,7 @@ class AuthService {
     return "User Signed Out Successfully!";
   }
 
-  Future<void> signInWithGoogle() async {
+  signInWithGoogle() async {
     
     try {
       final GoogleSignIn _googleSignIn = new GoogleSignIn(
@@ -136,11 +136,11 @@ class AuthService {
     }
   }
 
-  Future<String> getCurrentPersonID() async {
+  getCurrentPersonID() async {
     return (await _auth.currentUser()).uid;
   }
 
-  Future getCurrentUserInfo() async{
+  getCurrentUserInfo() async{
     return await _auth.currentUser();
   }
 }

@@ -14,7 +14,6 @@ import 'package:ConnectMe/views/chatRoomDashboard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 
-
 class SignIn extends StatefulWidget {
   final Function toggleState, toggleTheme, toggleAccentColor;
   final bool signUpState;
@@ -504,7 +503,7 @@ class _SignInState extends State<SignIn> {
                       ),
                     ),
                   ],
-                )
+                ),
               ),
             ],
           ),

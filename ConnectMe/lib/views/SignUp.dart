@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:ConnectMe/services/database.dart';
 import 'package:ConnectMe/helper/helperFunctions.dart';
 import 'package:ConnectMe/views/chatRoomDashboard.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +28,7 @@ class _SignUpState extends State<SignUp> {
   String titleSignUp = "Sign Up";
   final formKey = GlobalKey<FormState>();
   final GlobalKey<State> _keyLoader = new GlobalKey<State>();
+  TextEditingController countryCodeController = new TextEditingController();
   TextEditingController emailEditingController = new TextEditingController();
   TextEditingController userNameEditingController = new TextEditingController();
   TextEditingController passwordEditingController = new TextEditingController();
@@ -47,13 +47,18 @@ class _SignUpState extends State<SignUp> {
     });
 
     if (formKey.currentState.validate()) {
-
+      if (countryCodeController.text.isEmpty || countryCodeController.text[0] != '+' || countryCodeController.text.length > 4) {
+        setState(() {
+          titleSignUp = "Sign Up";
+        });
+        return;
+      }
       Map<String, dynamic> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
         'gender': "Male",
         'dateOfBirth': DateTime.now(),
-        'phoneNumber': phoneNumberEditingController.text,
+        'phoneNumber': countryCodeController.text + " " + phoneNumberEditingController.text,
         'profileImage': 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png',
       };
 
@@ -112,9 +117,9 @@ class _SignUpState extends State<SignUp> {
             context,
             CupertinoPageRoute(
               builder: (context) => ChatRoom(
-                  toggleTheme: widget.toggleTheme,
-                  lightThemeColor: widget.lightThemeColor,
-                  toggleAccentColor: widget.toggleAccentColor,
+                toggleTheme: widget.toggleTheme,
+                lightThemeColor: widget.lightThemeColor,
+                toggleAccentColor: widget.toggleAccentColor,
               ),
             ),
           );
@@ -127,6 +132,11 @@ class _SignUpState extends State<SignUp> {
             titleSignUp = "Sign Up";
           });
         });
+    } else {
+      print("Error in Sign up!");
+      setState(() {
+        titleSignUp = "Sign Up";
+      });
     }
   }
 
@@ -172,7 +182,7 @@ class _SignUpState extends State<SignUp> {
                   Constants.currentTheme == 'dark' ? Icons.wb_sunny_rounded : Icons.brightness_3
               ),
             ),
-          )
+          ),
         ],
       ),
       body: _loading ? Container(
@@ -181,254 +191,307 @@ class _SignUpState extends State<SignUp> {
               fontSize: 40.0,
               color: Constants.currentTheme == 'dark' ? Colors.white : widget.lightThemeColor,
             ),
-          )
-      ) :  Container(
-            alignment: Alignment.center,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children:[
-                    Container(
-                        padding: EdgeInsets.fromLTRB(10, 20, 10, 30),
-                        child: Text("Hello,", style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 50,
-                          fontFamily: 'RobotoMono' ,
-                        ),
-                        ),
-                    ),
-                Form(
-                  key: formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
-                          controller: userNameEditingController,
-                          validator: (value) {
-                            return value.length < 6
-                                ? "Enter Username of 6+ characters"
-                                : null;
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Username",
-                            hintText: "Enter Username",
-                            hintStyle: TextStyle(
-                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
-                            ),
-                            border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: new BorderSide(
-                                color: Colors.grey,
-                                width: 1,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: BorderSide(
-                                color: widget.lightThemeColor,
-                                style: BorderStyle.solid,
-                                width: 3,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        TextFormField(
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
-                          controller: emailEditingController,
-                          validator: (value) {
-                            if (emailEditingController.text.isEmpty) return "Email Cannot be Empty";
-                            return RegExp(
-                                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-                                .hasMatch(emailEditingController.text) ? null : "Invalid Email";
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Email Address",
-                            hintText: "Enter your Email Address",
-                            hintStyle: TextStyle(
-                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
-                            ),
-                            border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: new BorderSide(
-                                color: Colors.grey,
-                                width: 1,
-                              ),
-                            ),
-                            errorText: isErrorInSignUp ? errorSignUpMessage : null,
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: BorderSide(
-                                color: widget.lightThemeColor,
-                                style: BorderStyle.solid,
-                                width: 3,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Container(
-                          child: IntlPhoneField(
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w300
-                            ),
-                            controller: phoneNumberEditingController,
-                            decoration: InputDecoration(
-                              labelText: 'Phone Number',
-                              hintText: "Enter your Number",
-                              hintStyle: TextStyle(
-                                  color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
-                              ),
-                              focusColor: widget.lightThemeColor,
-                              border: OutlineInputBorder(
-                                borderRadius: new BorderRadius.circular(32.0),
-                                borderSide: new BorderSide(
-                                  color: Colors.grey,
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: new BorderRadius.circular(32.0),
-                                borderSide: BorderSide(
-                                  color: widget.lightThemeColor,
-                                  style: BorderStyle.solid,
-                                  width: 3,
-                                ),
-                              ),
-                            ),
-                            initialCountryCode: 'IN',
-                          ),
-                        ),
-                        SizedBox(height: 7,),
-                        TextFormField(
-                          controller: passwordEditingController,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
-                          obscureText:  !_passwordVisible ? true : false,
-                          validator: (value) {
-                            return value.length < 6
-                                ? "Enter Password of 6+ characters"
-                                : null;
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Password",
-                            hintText: "Enter your Password",
-                            hintStyle: TextStyle(
-                                color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
-                            ),
-                            border: new OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: new BorderSide(
-                                  color: Colors.grey,
-                                  width: 5
-                              ),
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _passwordVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: widget.lightThemeColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _passwordVisible = !_passwordVisible;
-                                });
-                              },
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: new BorderRadius.circular(32.0),
-                              borderSide: BorderSide(
-                                color: widget.lightThemeColor,
-                                style: BorderStyle.solid,
-                                width: 3,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 18,),
-                        GestureDetector(
-                          onTap: () {
-                            checkAndSignMeIn();
-                          },
-                          child: customButtonDark(
-                              context, titleSignUp, 18, widget.lightThemeColor
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(30),
-                                gradient: LinearGradient(colors: [
-                                  Colors.white,
-                                  Colors.white
-                                ]),
-                                boxShadow: Constants.currentTheme == 'light' ? [BoxShadow(spreadRadius: 0.3)]: null
-                            ),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 20,),
-                              margin: EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'with Google',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold
-                                )
-                              ),),
-                            ),
-                            SizedBox(width: 4,),
-                            Container(
-                              alignment: Alignment.center,
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  gradient: LinearGradient(colors: [
-                                    Colors.blue, Colors.blue
-                                  ])
-                              ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 20,),
-                                margin: EdgeInsets.symmetric(horizontal: 3),
-                                child: Text(
-                                    'with Facebook',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold
-                                    )
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                ),
-                SizedBox(height: 20),
-                    Constants.currentTheme == 'dark' ? Text(
-                      "Made with Love in India",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w100
-                    ),
-                  ) :
-                Text(
-                    "Made with Love in India",
-                    style: TextStyle(
-                    color: Colors.black54,
-                        fontWeight: FontWeight.w300
+          ),
+      ) : Container(
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:[
+              Container(
+                  padding: EdgeInsets.fromLTRB(10, 50, 10, 30),
+                  child: Text("Hello,", style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 50,
+                    fontFamily: 'RobotoMono',
                   ),
-                ),
-              ]
+                  ),
+              ),
+          Form(
+            key: formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
+                    controller: userNameEditingController,
+                    validator: (value) {
+                      return value.length < 6
+                          ? "Enter Username of 6+ characters"
+                          : null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: "Username",
+                      hintText: "Enter Username",
+                      hintStyle: TextStyle(
+                          color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
+                      ),
+                      border: new OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: widget.lightThemeColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
+                    controller: emailEditingController,
+                    validator: (value) {
+                      if (emailEditingController.text.isEmpty) return "Email Cannot be Empty";
+                      return RegExp(
+                          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                          .hasMatch(emailEditingController.text) ? null : "Invalid Email";
+                    },
+                    decoration: InputDecoration(
+                      labelText: "Email Address",
+                      hintText: "Enter your Email Address",
+                      hintStyle: TextStyle(
+                          color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
+                      ),
+                      border: new OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      errorText: isErrorInSignUp ? errorSignUpMessage : null,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: widget.lightThemeColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    child: phoneField(),
+                  ),
+                  SizedBox(height: 10),
+                  TextFormField(
+                    controller: passwordEditingController,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
+                    obscureText:  !_passwordVisible ? true : false,
+                    validator: (value) {
+                      return value.length < 6
+                          ? "Enter Password of 6+ characters"
+                          : null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      hintText: "Enter your Password",
+                      hintStyle: TextStyle(
+                          color: Constants.currentTheme == 'dark' ? Colors.white24 : Colors.black38
+                      ),
+                      border: new OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                            color: Colors.grey,
+                            width: 5
+                        ),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: widget.lightThemeColor,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _passwordVisible = !_passwordVisible;
+                          });
+                        },
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: widget.lightThemeColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 18,),
+                  GestureDetector(
+                    onTap: () {
+                      checkAndSignMeIn();
+                    },
+                    child: customButtonDark(
+                        context, titleSignUp, 18, widget.lightThemeColor
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                      alignment: Alignment.center,
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          gradient: LinearGradient(colors: [
+                            Colors.white,
+                            Colors.white
+                          ]),
+                          boxShadow: Constants.currentTheme == 'light' ? [BoxShadow(spreadRadius: 0.3)]: null
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20,),
+                        margin: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'with Google',
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold
+                          )
+                        ),),
+                      ),
+                      SizedBox(width: 4,),
+                      Container(
+                        alignment: Alignment.center,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            gradient: LinearGradient(colors: [
+                              Colors.blue, Colors.blue
+                            ])
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 20,),
+                          margin: EdgeInsets.symmetric(horizontal: 3),
+                          child: Text(
+                              'with Facebook',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold
+                              )
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+          ),
+          SizedBox(height: 20),
+              Constants.currentTheme == 'dark' ? Text(
+                "Made with Love in India",
+              style: TextStyle(
+                fontWeight: FontWeight.w100
+              ),
+            ) :
+          Text(
+              "Made with Love in India",
+              style: TextStyle(
+              color: Colors.black54,
+                  fontWeight: FontWeight.w300
             ),
           ),
-        ),
+        ]
+      ),
+          ),
+    );
+  }
+
+  Widget phoneField() {
+    return Container(
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    keyboardType: TextInputType.phone,
+                    textAlign: TextAlign.end,
+                    validator: (value) {
+                      return (value.isEmpty) ? "Enter Code!": null;
+                    },
+                    controller: countryCodeController,
+                    maxLength: 4,
+                    decoration: InputDecoration(
+                      hintText: "+91",
+                      focusColor: Constants.accentColor,
+                      border: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: Constants.accentColor == Colors.black ?
+                          Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                              : Constants.accentColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 4),
+                Expanded(
+                  flex: 4,
+                  child: TextFormField(
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w300
+                    ),
+                    validator: (value) {
+                      return (value.isEmpty) ? "Empty Phone Number!": null;
+                    },
+                    maxLength: 10,
+                    controller: phoneNumberEditingController,
+                    decoration: InputDecoration(
+                      hintText: "Enter Phone Number",
+                      focusColor: Constants.accentColor,
+                      border: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: new BorderSide(
+                          color: Colors.grey,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: new BorderRadius.circular(32.0),
+                        borderSide: BorderSide(
+                          color: Constants.accentColor == Colors.black ?
+                          Constants.currentTheme == 'dark' ? Colors.white70 : Colors.black
+                              : Constants.accentColor,
+                          style: BorderStyle.solid,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

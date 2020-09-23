@@ -466,7 +466,7 @@ class _AccountSettingsState extends State<AccountSettings> {
             _selectDate(context);
           },
           child: Text(
-              selectedDate != null ? "${selectedDate.toLocal()}".split(' ')[0] : "Birthday",
+              selectedDate != null ? "${selectedDate.toLocal()}".split(' ')[0] : "Birthday not set yet",
             style: selectedDate != null ? TextStyle(fontSize: 25, fontWeight: FontWeight.bold) :
               TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
           ),
@@ -478,9 +478,9 @@ class _AccountSettingsState extends State<AccountSettings> {
   _selectDate(BuildContext context) async {
     final DateTime picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: selectedDate == null ? DateTime.now() : selectedDate,
       firstDate: DateTime(1900),
-      lastDate: DateTime(2025),
+      lastDate: DateTime.now(),
       helpText: 'Select Birth Date',
       cancelText: 'Cancel',
       confirmText: 'Set',
@@ -551,7 +551,7 @@ class _AccountSettingsState extends State<AccountSettings> {
   _requestEmailVerification() async {
     FirebaseUser firebaseUser = await FirebaseAuth.instance.currentUser();
     try {
-      // await firebaseUser.sendEmailVerification();
+      await firebaseUser.sendEmailVerification();
       _popupMessage("Check you Email!", "An Email verification has been sended to your email for verification!");
       return firebaseUser.uid;
     } catch (e) {
