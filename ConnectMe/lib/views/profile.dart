@@ -190,6 +190,17 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  setSearchParam(String query) {
+    List<String> caseSearchList = List();
+    var length = query.length;
+    for (int i = 0; i < length; i++) {
+      for (int j = i+1; j <= length; j++) {
+        caseSearchList.add(query.substring(i, j));
+      }
+    }
+    return caseSearchList;
+  }
+
   Future _updateProfile(context) async {
     if (
           _image == null &&
@@ -210,9 +221,10 @@ class _ProfileState extends State<Profile> {
     number = phoneNumberController.text.isEmpty ? phoneNumber : phoneNumberController.text;
     _countryCode = countryCodeController.text.isEmpty ? countryCode : countryCodeController.text;
 
-    Map<String, String> userUpdateMap = {
+    Map<String, dynamic> userUpdateMap = {
       'name': name,
       'phoneNumber': countryCode + " " + number,
+      "userNameCaseSearch": setSearchParam(name),
     };
     setState(() {
       updateStateButtonTitle = 'UPDATING...';

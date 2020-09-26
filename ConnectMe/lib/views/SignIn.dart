@@ -157,6 +157,14 @@ class _SignInState extends State<SignIn> {
           }).catchError((onError) {
             print("Error on saving profilePhotoUrl Preferences");
           });
+          final FirebaseAuth auth = FirebaseAuth.instance;
+          final FirebaseUser user = await auth.currentUser();
+          final userId = user.uid;
+          prefs.setString('userId', userId).then((value) {
+            print("saved user id as $userId!");
+          }).catchError((onError) {
+            print("Error on saving userId Preferences");
+          });
           Constants.userName = name;
           Constants.userEmail = emailTextEditingController.text;
           Constants.profilePhotoUrl = userInfoSnapshot.documents[0].data["profileImage"];

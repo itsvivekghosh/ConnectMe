@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:ConnectMe/views/ChatScreen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
@@ -37,7 +39,9 @@ class _ChatRoomState extends State<ChatRoom> {
   bool _isSearching = false;
   String searchQuery = "Search Query";
 
+  QuerySnapshot searchResultsSnapshot;
   final formKey = GlobalKey<FormState>();
+  Future<QuerySnapshot> futureSearchResults;
   AuthService authService = new AuthService();
   TextEditingController searchEditingController;
   String darkThemeAssetPath = 'assets/theme/dark_green.jpg';
@@ -135,6 +139,7 @@ class _ChatRoomState extends State<ChatRoom> {
     _clearSearchQuery();
 
     setState(() {
+      searchResultsSnapshot = null;
       _isSearching = false;
     });
   }
@@ -142,6 +147,7 @@ class _ChatRoomState extends State<ChatRoom> {
   void _clearSearchQuery() {
     // print("close search box");
     setState(() {
+      searchResultsSnapshot = null;
       searchEditingController.clear();
       updateSearchQuery("Search query");
     });
@@ -155,7 +161,7 @@ class _ChatRoomState extends State<ChatRoom> {
   }
 
   Widget _buildSearchField() {
-    return new TextField(
+    return TextFormField(
       controller: searchEditingController,
       autofocus: true,
       decoration: InputDecoration(
@@ -166,12 +172,33 @@ class _ChatRoomState extends State<ChatRoom> {
         ),
       ),
       style: TextStyle(
-          color: Colors.white, fontSize: 16.4
+        color: Colors.white, fontSize: 16.4
       ),
       onChanged: updateSearchQuery,
     );
   }
 
+  controlSearching(String query) {
+    if (query.isNotEmpty) {
+      Future<QuerySnapshot> allFoundUsers = Firestore.instance.collection('users')
+        .where('userNameCaseSearch', arrayContains: query)
+        .getDocuments()
+        .then((value) {
+        setState(() {
+          searchResultsSnapshot = value;
+        });
+        return null;
+      }).catchError((e) {
+        print("Error Caught!: $e");
+      });
+      setState(() {
+        futureSearchResults = allFoundUsers;
+      });
+    } else {
+      // Empty Query field
+      // print("Empty Query");
+    }
+  }
 
   dynamic getProfileImage() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -365,29 +392,26 @@ class _ChatRoomState extends State<ChatRoom> {
                   ),
                 ),
               ),
-              bottom: TabBar(
+              bottom: _isSearching ? null : TabBar(
                 tabs: tabs,
                 indicatorColor: Constants.currentTheme == 'dark' ?
                   Constants.accentColor == Colors.black ? Colors.white : Constants.accentColor
                     : Colors.white
               ),
               actions: _buildActions(),
-              // actions: <Widget>[
-              //
-              // ],
             ),
           ),
           body: TabBarView(
-            children: tabs.map((Tab tab) {
-              return Center(
-                child: Text(
-                  tab.text.toLowerCase() + ' Tab ' + Constants.userName.toString(),
-                  style: Theme.of(context).textTheme.headline4,
-                ),
-              );
-            }).toList(),
+            children: [
+              _isSearching ?
+                  futureSearchResults == null || searchResultsSnapshot == null ?
+                    displayNoSearchResults('Search Something', Icons.all_inclusive) : displaySearchResults()
+                : Text('Chat Screen'),
+              Text("Status"), // STATUS
+              Text("Groups"), // GROUPS
+            ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: _isSearching ? null : FloatingActionButton(
             child: Icon(
               Icons.message,
               color: Colors.white,
@@ -402,12 +426,56 @@ class _ChatRoomState extends State<ChatRoom> {
     );
   }
 
+  Widget displayNoSearchResults(message, icon) {
+    return Container(
+      padding: EdgeInsets.only(top: 150),
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          Icon(
+            icon,
+            color: Constants.currentTheme == 'dark' ? Colors.white12 : Colors.black12,
+            size: 150,
+          ),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Constants.currentTheme == 'dark' ? Colors.white12 : Colors.black12,
+              fontSize: 22,
+              fontWeight: FontWeight.w300
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget displaySearchResults() {
+    if (searchResultsSnapshot.documents.length > 0) {
+      return ListView.builder(
+        itemCount: searchResultsSnapshot.documents.length,
+        itemBuilder: (context, index) {
+          Map<String, dynamic> userMap = {
+            "userId": searchResultsSnapshot.documents[index].data['userId'],
+            "userEmail": searchResultsSnapshot.documents[index].data['email'],
+            "userName": searchResultsSnapshot.documents[index].data['name'],
+            "profilePhotoUrl": searchResultsSnapshot.documents[index].data['profileImage'],
+          };
+          return SearchTile(userMap: userMap);
+        },
+      );
+    } else {
+      return displayNoSearchResults('No results found', Icons.info);
+    }
+  }
+
   List<Widget> _buildActions() {
     if (_isSearching) {
       return <Widget>[
         new GestureDetector(
           onTap: () {
-            print("Searching... " + searchEditingController.text.toString());
+            controlSearching(searchEditingController.text.toString());
           },
           child: Container(
               padding: EdgeInsets.only(right: 12),
@@ -452,7 +520,6 @@ class _ChatRoomState extends State<ChatRoom> {
         child: IconButton(
           icon: Icon(Icons.search),
           onPressed: () {
-            print("Search");
             _startSearch();
           },
         ),
@@ -654,12 +721,12 @@ class _ChatRoomState extends State<ChatRoom> {
                             padding: EdgeInsets.symmetric(horizontal: 20,),
                             margin: EdgeInsets.symmetric(horizontal: 3),
                             child: Text(
-                                "Update Bio",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold
-                                )
+                              "Update Bio",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold
+                              ),
                             ),
                           ),
                         ),
@@ -695,3 +762,99 @@ final List<Tab> tabs = <Tab>[
   Tab(text: 'Status'.toUpperCase()),
   Tab(text: 'Groups'.toUpperCase()),
 ];
+
+class SearchTile extends StatelessWidget {
+  final Map<String, dynamic> userMap;
+  SearchTile({this.userMap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+        onTap: () {
+          print("Profile of ${userMap['userName']}");
+        },
+          child: Container(
+          padding: EdgeInsets.only(top: 10, left: 10),
+          child: Column(
+            children: [
+            ListTile(
+              leading: Container(
+                width: 60,
+                height: 60,
+                child: profileImage(userMap['profilePhotoUrl']),
+              ),
+              title: Text(
+                userMap['userName'],
+                style: TextStyle(
+                    fontWeight: FontWeight.w600
+                ),
+              ),
+              subtitle: Text(
+                userMap['userEmail'],
+                style: TextStyle(
+                  fontWeight: FontWeight.w400
+                ),
+              ),
+              trailing: userMap['userName'] != Constants.userName ? Container(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () {
+                    joinChatScreen(context, userMap);
+                  },
+                  icon: Icon(
+                    Icons.message,
+                    size: 25,
+                    color: Constants.currentTheme == "dark" ? Colors.white : Constants.accentColor
+                  ),
+                ),
+              ) : null,
+            ),
+            SizedBox(height: 10),
+            drawLine(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget profileImage(profilePhotoUrl) {
+    return Container(
+      child: ClipOval(
+        child: ProgressiveImage(
+          placeholder: CachedNetworkImageProvider(profilePhotoUrl),
+          image: CachedNetworkImageProvider(profilePhotoUrl),
+          thumbnail: CachedNetworkImageProvider(profilePhotoUrl),
+          width: 80,
+          height: 80,
+          blur: 3,
+          fit: BoxFit.fill,
+        ),
+      ),
+    );
+  }
+}
+
+Widget drawLine() {
+  return Padding(
+    padding:EdgeInsets.symmetric(horizontal: 50.0),
+    child: Container(
+      height: 0.6,
+      width: 350.0,
+      color: Constants.currentTheme == 'light' ? Colors.black26 : Colors.white38,
+    ),
+  );
+}
+
+joinChatScreen(context, userMap) {
+  if (userMap['userName'] != Constants.userName) {
+    print("Connect With '${userMap['userName']}' '${userMap['userId']}'");
+    Navigator.push(
+      context,
+      CupertinoPageRoute(builder: (context) {
+        return ChatScreen(user: userMap);
+      }),
+    );
+  } else {
+    print("You cannot send message to yourself");
+  }
+}

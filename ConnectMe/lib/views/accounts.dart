@@ -292,6 +292,7 @@ class _AccountSettingsState extends State<AccountSettings> {
       }
     });
   }
+
   _changeGenderTile() async {
     try {
       FirebaseUser _firebaseUser = await FirebaseAuth.instance.currentUser();

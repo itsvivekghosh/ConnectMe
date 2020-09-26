@@ -39,6 +39,17 @@ class _SignUpState extends State<SignUp> {
   AuthService authService = new AuthService();
   DatabaseMethods databaseMethods = new DatabaseMethods();
 
+  setSearchParam(String caseNumber) {
+    List<String> caseSearchList = List();
+    var length = caseNumber.length;
+    for (int i = 0; i < length; i++) {
+      for (int j = i+1; j <= length; j++) {
+        caseSearchList.add(caseNumber.substring(i,j));
+      }
+    }
+    return caseSearchList;
+  }
+
   void checkAndSignMeIn() async {
     setState(() {
       isErrorInSignUp = false;
@@ -53,12 +64,15 @@ class _SignUpState extends State<SignUp> {
         });
         return;
       }
+
+      var searchList = setSearchParam(userNameEditingController.text);
       Map<String, dynamic> userMap = {
         'name': userNameEditingController.text,
         'email': emailEditingController.text,
         'gender': "Male",
         'dateOfBirth': DateTime.now(),
         'phoneNumber': countryCodeController.text + " " + phoneNumberEditingController.text,
+        "userNameCaseSearch": searchList,
         'profileImage': 'https://raw.githubusercontent.com/itsvivekghosh/flutter-tutorial/master/default.png',
       };
 
@@ -70,6 +84,7 @@ class _SignUpState extends State<SignUp> {
           email: emailEditingController.text, password: passwordEditingController.text)
         .then((value) async {
           FirebaseUser user = value.user;
+          userMap['userId'] = user.uid;
           DatabaseMethods().uploadUserData(userMap, user.uid);
 
           // send verification Email
@@ -404,9 +419,8 @@ class _SignUpState extends State<SignUp> {
                   fontWeight: FontWeight.w300
             ),
           ),
-        ]
+        ]),
       ),
-          ),
     );
   }
 
